@@ -23,27 +23,27 @@ class Team:
 
 class Screen(GridLayout):
     def __init__(self, **kwargs):
-        super(LoginScreen, self).__init__(**kwargs)
+        super(Screen, self).__init__(**kwargs)
         self.choose()
 
     def choose(self):
         self.cols = 2
         self.add_widget(Label(text="Enter team name:"))
         teamsel = TextInput(multiline=False)
-        teamsel.bind(on_text_validate=self.menu)
+        teamsel.bind(on_text_validate=self.setTeam)
         self.add_widget(teamsel)
+
+    def setTeam(self, team):
+        self.team = Team(team)
+        self.menu()
 
     def makeImage(self, name, path):
         exec("self.%s = Image(source='%s', allow_stretch=True, keep_ratio=False)" % (name, path))
         exec("exec('%sbtn = Button(text=%s: %s)' % (name, name, self.team.%s))" % name)
 
     def menu(self, team=None):
-        if team != None:
-            self.team = Team(team)
         self.cols = 5
         self.clear_widgets()
-
-        self.makeImage("moat", "kivyimage/Moat.png")
 
         self.Moat = Image(source="kivyimage/Moat.png", allow_stretch = True, keep_ratio = False)
         moatbtn = Button(text="Moat: %s" % self.team.moat)
@@ -112,17 +112,19 @@ class Screen(GridLayout):
     def newscreen(self, btn):
         self.clear_widgets()
         self.cols = 1
-        print(btn.text)
         if " " in btn.text:
-            btn.text = btn.text[" ".index(list(btn.text))]
+            btn.text = btn.text[:list(btn.text).index(" ")-1]
         exec("self.add_widget(self.%s)" % btn.text)
+        print(btn.text.lower())
+        exec("self.team.%s += 1" % btn.text.lower())
+        exec("print(self.team.%s)" % btn.text.lower())
         backbtn = Button(text="back")
         backbtn.bind(on_press=self.menu)
         self.add_widget(backbtn)
 
 class MyApp(App):
     def build(self):
-        return LoginScreen()
+        return Screen()
 
 if __name__ == "__main__":
     sample = MyApp()

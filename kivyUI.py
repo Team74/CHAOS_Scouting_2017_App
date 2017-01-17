@@ -1,5 +1,5 @@
 from kivy.app import App
-from kivy.uix.gridlayout import GridLayout
+from kivy.uix.stacklayout import StackLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.image import Image
@@ -8,119 +8,135 @@ from kivy.uix.widget import Widget
 from kivy.properties import *
 from kivy.lang import Builder
 
+
+
+#the following functions are for decluttering the scr functions
+def smallButton(txt, height=.1666666666666667):
+    return Button(text=txt, size_hint=(.115, height))
+def smallLabel(txt, height=.075):
+    return Label(text=txt, size_hint=(.115, height))
+
+def smallSideButton(txt, height=.1666666666666667):
+    return Button(text=txt, size_hint=(.0775, height))
+def smallSideLabel(txt, height=.1666666666666667):
+    return Label(text=txt, size_hint=(.0775, height))
+
+def largeButton(txt, height=.1666666666666667):
+    return Button(text=txt, size_hint=(.23, height))
+def largeLabel(txt, height=.1666666666666667):
+    return Label(text=txt, size_hint=(.23, height))
+
+def largeSideButton(txt, height=.1666666666666667):
+    return Button(text=txt, size_hint=(.155, height))
+def largeSideLabel(txt, height=.1666666666666667):
+    return Label(text=txt, size_hint=(.155, height))
+
 class Team:
     def __init__(self, number):
         self.number = number
-        self.chevaldefrise = 0
-        self.drawbridge = 0
-        self.moat = 0
-        self.portcullis = 0
-        self.ramparts = 0
-        self.rockwall = 0
-        self.roughterrain = 0
-        self.sallyport = 0
+        self.highgoal = 0
+        self.lowgoal = 0
+        self.gears = 0
+        self.pickupGears = False
+        self.pickupBalls = False
+        self.climb = False
+        self.capacity = 0
 
 
-class Screen(GridLayout):
+class Screen(StackLayout):
     def __init__(self, **kwargs):
         super(Screen, self).__init__(**kwargs)
+        self.lastLowVal = 0
         self.choose()
 
     def choose(self):
-        self.cols = 2
-        self.add_widget(Label(text="Enter team name:"))
-        teamsel = TextInput(multiline=False)
-        teamsel.bind(on_text_validate=self.setTeam)
+        self.clear_widgets
+        teamsel = TextInput(multiline=False, size_hint=(.5, 1))
+        teamsel.bind(on_text_validate=lambda x: self.setTeam(teamsel.text))
+        print(teamsel.size)
+        print(teamsel.size_hint)
+        self.add_widget(Label(text="Enter team name:", size_hint=(.5, 1)))
         self.add_widget(teamsel)
 
     def setTeam(self, team):
         self.team = Team(team)
-        self.menu()
+        self.scrMain()
 
-    def makeImage(self, name, path):
-        exec("self.%s = Image(source='%s', allow_stretch=True, keep_ratio=False)" % (name, path))
-        exec("exec('%sbtn = Button(text=%s: %s)' % (name, name, self.team.%s))" % name)
+    #the following functions are called by the buttons on the interface when pressed
+    def addLow(self, count):
+        self.team.lowgoal += count
+        self.scrMain()
+    def addHigh(self, count):
+        self.team.highgoal += count
+        self.scrMain()
+    def addGear(self, count):
+        self.team.gears += count
+        self.scrMain()
+    def canPickGear(self):
+        if self.team.pickupGears == False: self.team.pickupGears = True
+        else:                              self.team.pickupGears = False
+        self.scrMain()
+    def climbed(self):
+        if self.team.climb == False: self.team.climb = True
+        else:                        self.team.climb = False
+        self.scrMain()
 
-    def menu(self, team=None):
-        self.cols = 5
+    #main functions (displays)
+    def scrMain(self, team=None): #screen for counting goals and gears
+        self.minimum_height = 100
+        self.minimum_width = 150
         self.clear_widgets()
+        displist = list()
+        #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
 
-        self.Moat = Image(source="kivyimage/Moat.png", allow_stretch = True, keep_ratio = False)
-        moatbtn = Button(text="Moat: %s" % self.team.moat)
-        moatbtn.bind(on_press=self.newscreen)
+            #line 1
+        lowLbl =       largeSideLabel("Low goal"); displist.append(lowLbl)
+        dummyLbl =     Label(text=" ", size_hint=(.23, .075)); displist.append(dummyLbl)
+        teamDisp =     largeLabel(str(self.team.number)); displist.append(teamDisp)
+        dummyLbl2 =    Label(text=" ", size_hint=(.23, .075)); displist.append(dummyLbl2)
+        highLbl =      largeSideLabel("High goal"); displist.append(highLbl)
 
-        self.Portcullis = Image(source="kivyimage/Portcullis.png", allow_stretch=True, keep_ratio = False)
-        portbtn = Button(text="Portcullis: %s" % self.team.portcullis)
-        portbtn.bind(on_press=self.newscreen)
+            #line 2
+        lowDisp =      largeSideLabel(str(self.team.lowgoal)); displist.append(lowDisp)
+        dummyLbl4 =    Label(text=" ", size_hint=(.69, .075)); displist.append(dummyLbl4)
+        highDisp =     largeSideLabel(str(self.team.highgoal)); displist.append(highDisp)
 
-        self.SallyPort = Image(source="kivyimage/Sally-Port.png", allow_stretch=True, keep_ratio = False)
-        sportbtn = Button(text="SallyPort: %s" % self.team.sallyport)
-        sportbtn.bind(on_press=self.newscreen)
+            #line 3
+        incLow1 =      smallSideButton("1"); incLow1.bind(on_press=lambda x: self.addLow(1)); displist.append(incLow1)
+        incLow5 =      smallSideButton("5"); incLow5.bind(on_press=lambda x: self.addLow(5)); displist.append(incLow5)
+        capLbl =       largeLabel("Capacity"); displist.append(capLbl)
+        toggleAuton =  largeButton("Auton"); displist.append(toggleAuton)# toggleAuton.bind(on_press=self.scrAuton); displist.append(toggleAuton) #TODO - add auton screen
+        toggleCapab =  largeButton("Capability"); displist.append(toggleCapab)# toggleCapab.bind(on_press=self.scrCapab); displist.append(toggleCapab) #TODO - add capability screen
+        decHigh =      largeSideButton("-"); decHigh.bind(on_press=lambda x: self.addHigh(-1)); displist.append(decHigh)
 
-        self.Ramparts = Image(source="kivyimage/Ramparts.png", allow_stretch=True, keep_ratio = False)
-        rampbtn = Button(text="Ramparts: %s" % self.team.ramparts)
-        rampbtn.bind(on_press=self.newscreen)
+            #line 4
+        incLow10 =     smallSideButton("10"); incLow10.bind(on_press=lambda x: self.addLow(10)); displist.append(incLow10)
+        incLow20 =     smallSideButton("20"); incLow20.bind(on_press=lambda x: self.addLow(20)); displist.append(incLow20)
+        capDisp =      largeButton(str(self.team.capacity)); capDisp.bind(on_press=lambda x: self.addLow(self.team.capacity)); displist.append(capDisp)
+        toggleTeam =   largeButton("Team"); toggleTeam.bind(on_press=lambda x: self.choose()); displist.append(toggleTeam)
+        toggleExit =   largeButton("Exit"); displist.append(toggleExit)# toggleExit.bind(on_press=self.scrExit); displist.append(toggleExit) #TODO - add exit screen (will be able to choose to submit and exit, exit, or go back)
+        addHigh1 =     largeSideButton(" "); addHigh1.bind(on_press=lambda x: self.addHigh(1)); displist.append(addHigh1)
 
-        self.ChevaldeFrise = Image(source="kivyimage/Cheval-de-Frise.png", allow_stretch=True, keep_ratio = False)
-        chevbtn = Button(text="ChevaldeFrise: %s" % self.team.chevaldefrise)
-        chevbtn.bind(on_press=self.newscreen)
+            #line 5
+        decLow1 =      smallSideButton("-1"); decLow1.bind(on_press=lambda x: self.addLow(-1)); displist.append(decLow1)
+        decLow5 =      smallSideButton("-5"); decLow5.bind(on_press=lambda x: self.addLow(-5)); displist.append(decLow5)
+        climbLbl =     largeLabel("Climbed"); displist.append(climbLbl)
+        gearLbl =      largeLabel("Gears"); displist.append(gearLbl)
+        gearDisp =     largeLabel(str(self.team.gears)); displist.append(gearDisp)
+        addHigh2 =     largeSideButton("+"); addHigh2.bind(on_press=lambda x: self.addHigh(1)); displist.append(addHigh2)
 
-        self.RoughTerrain = Image(source="kivyimage/Rough-Terrain.png", allow_stretch=True, keep_ratio = False)
-        roughbtn = Button(text="RoughTerrain: %s" % self.team.roughterrain)
-        roughbtn.bind(on_press=self.newscreen)
+            #line 6
+        decLow10 =     smallSideButton("-10"); decLow10.bind(on_press=lambda x: self.addLow(-10)); displist.append(decLow10)
+        decLow20 =     smallSideButton("-20"); decLow20.bind(on_press=lambda x: self.addLow(-20)); displist.append(decLow20)
+        checkClimb =   largeButton("yes" if self.team.climb == True else "no"); checkClimb.bind(on_press=lambda x: self.climbed()); displist.append(checkClimb)
+        addGear =      largeButton("+"); addGear.bind(on_press=lambda x: self.addGear(1)); displist.append(addGear)
+        decGear =      largeButton("-"); decGear.bind(on_press=lambda x: self.addGear(-1)); displist.append(decGear)
+        addHigh3 =     largeSideButton(" "); addHigh3.bind(on_press=lambda x: self.addHigh(1)); displist.append(addHigh3)
 
-        self.Drawbridge = Image(source="kivyimage/Drawbridge.png", allow_stretch=True, keep_ratio = False)
-        drawbtn = Button(text="Drawbridge: %s" % self.team.drawbridge)
-        drawbtn.bind(on_press=self.newscreen)
+        for widg in displist:
+            self.add_widget(widg)
 
-        self.RockWall = Image(source="kivyimage/Rock-Wall.png", allow_stretch=True, keep_ratio = False)
-        rockbtn = Button(text="RockWall: %s" % self.team.rockwall)
-        rockbtn.bind(on_press=self.newscreen)
 
-        self.Upper = Image(source="kivyimage/tower.png", allow_stretch=True, keep_ratio=False)
-        towerbtnU = Button(text="Upper")
-        towerbtnU.bind(on_press=self.newscreen)
-
-        self.Lower = Image(source="kivyimage/tower.png", allow_stretch=True, keep_ratio=False)
-        towerbtnD = Button(text="Lower")
-        towerbtnD.bind(on_press=self.newscreen)
-
-        self.add_widget(self.Moat)
-        self.add_widget(self.Portcullis)
-        self.add_widget(self.SallyPort)
-        self.add_widget(self.Ramparts)
-        self.add_widget(self.Upper)
-
-        self.add_widget(moatbtn)
-        self.add_widget(portbtn)
-        self.add_widget(sportbtn)
-        self.add_widget(rampbtn)
-        self.add_widget(towerbtnU)
-
-        self.add_widget(self.ChevaldeFrise)
-        self.add_widget(self.RoughTerrain)
-        self.add_widget(self.Drawbridge)
-        self.add_widget(self.RockWall)
-        self.add_widget(self.Lower)
-
-        self.add_widget(chevbtn)
-        self.add_widget(roughbtn)
-        self.add_widget(drawbtn)
-        self.add_widget(rockbtn)
-        self.add_widget(towerbtnD)
-
-    def newscreen(self, btn):
-        self.clear_widgets()
-        self.cols = 1
-        if " " in btn.text:
-            btn.text = btn.text[:list(btn.text).index(" ")-1]
-        exec("self.add_widget(self.%s)" % btn.text)
-        print(btn.text.lower())
-        exec("self.team.%s += 1" % btn.text.lower())
-        exec("print(self.team.%s)" % btn.text.lower())
-        backbtn = Button(text="back")
-        backbtn.bind(on_press=self.menu)
-        self.add_widget(backbtn)
 
 class MyApp(App):
     def build(self):

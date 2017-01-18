@@ -8,7 +8,16 @@ from kivy.uix.widget import Widget
 from kivy.properties import *
 from kivy.lang import Builder
 
-
+w = Builder.load_string("""
+<Button>:
+    canvas:
+        Color:
+            rgb: (1, 0, 0)
+<Label>:
+    canvas:
+        Color:
+            rgb: (0, 1, 0)
+""")
 
 #the following functions are for decluttering the scr functions
 def smallButton(txt, height=.1666666666666667):

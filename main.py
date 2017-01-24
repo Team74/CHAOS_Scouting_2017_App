@@ -57,6 +57,11 @@ def largeSideButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):
 def largeSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
     return cLabel(text=txt, rgb=rgb, size_hint=(.155, height))
 
+def autonLabel(txt, rgb=[.5, .5, .5]):
+    return cLabel(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)-(.1/6)))
+def autonButton(txt, rgb=[.5, .5, .5]):
+    return cButton(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)-(.1/6)))
+
 class Team:
     def __init__(self, number):
         self.number = number
@@ -68,6 +73,10 @@ class Team:
         self.pickupGears = 0
         self.pickupBalls = 0
         self.capacity = 0
+
+        self.aHighgoal = 0
+        self.aLowgoal = 0
+        self.aGears = False
 
     def getAttr(self):
         return vars(self)
@@ -140,35 +149,39 @@ class Screen(StackLayout):
         if self.team.climb == False: self.team.climb = True
         else:                        self.team.climb = False
         self.scrMain()
+    def aAddLow(self, count):
+        self.team.aLowgoal += count
+        self.scrAuton()
+    def aAddHigh(self, count):
+        self.team.aHighgoal += count
+        self.scrAuton()
+    def aAddGear(self, obj=None):
+        self.team.aGears = not self.team.aGears
+        self.scrAuton()
 
     #main functions (displays)
     def scrMain(self, obj=None):
         self.clear_widgets()
         displist = list()
-        #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
-        #sea foam green: , rgb=[(14/255),(201/255),(170/255)] : low goal
-        #dark magenta:   , rgb=[(201/255),(28/255),(147/255)] : climbed
-        #fair blue:      , rgb=[(28/255),(129/255),(201/255)] : gears
-        #happy green:    , rgb=[(28/255),(201/255),(40/255)] :  high goal
-        #fair orange:    , rgb=[(201/255),(170/255),(28/255)] : switch
+        self.camefrom = "tele"
 
             #line 1
         lowLbl =       largeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
-        dummyLbl =     cLabel(text=" ", size_hint=(.23, .075)); displist.append(dummyLbl)
-        teamDisp =     largeLabel(str(self.team.number)); displist.append(teamDisp)
-        dummyLbl2 =    cLabel(text=" ", size_hint=(.23, .075)); displist.append(dummyLbl2)
+        dummyLbl =     cLabel(text=" ", rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl)
+        teamDisp =     largeLabel(str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp)
+        dummyLbl2 =    cLabel(text=" ", rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl2)
         highLbl =      largeSideLabel("High goal", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl)
 
             #line 2
         lowDisp =      largeSideLabel(str(self.team.lowgoal), rgb=[(14/255),(201/255),(170/255)]); displist.append(lowDisp)
-        dummyLbl4 =    cLabel(text=" ", size_hint=(.69, .075)); displist.append(dummyLbl4)
+        dummyLbl4 =    cLabel(text="Teleop", rgb=[0, 0, 0, 1], size_hint=(.69, .075)); displist.append(dummyLbl4)
         highDisp =     largeSideLabel(str(self.team.highgoal), rgb=[(28/255),(201/255),(40/255)]); displist.append(highDisp)
 
             #line 3
         incLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(1)); displist.append(incLow1)
         incLow5 =      smallSideButton("5", rgb=[(14/255),(201/255),(170/255)]); incLow5.bind(on_release=lambda x: self.addLow(5)); displist.append(incLow5)
         capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
-        toggleAuton =  largeButton("Auton", rgb=[(201/255),(170/255),(28/255)]); displist.append(toggleAuton)# toggleAuton.bind(on_release=self.scrAuton); displist.append(toggleAuton) #TODO - add auton screen
+        toggleAuton =  largeButton("Auton", rgb=[(201/255),(170/255),(28/255)]); toggleAuton.bind(on_release=self.scrAuton); displist.append(toggleAuton)
         toggleCapab =  largeButton("Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
         decHigh =      largeSideButton("-1", rgb=[(28/255),(201/255),(40/255)]); decHigh.bind(on_release=lambda x: self.addHigh(-1)); displist.append(decHigh)
 
@@ -214,16 +227,54 @@ class Screen(StackLayout):
     def scrCapab(self, obj=None, cap=None):
         self.clear_widgets()
         displist = list()
+        capChangeText = ""
         if not cap == None:
-            self.team.capacity = cap
+            try:
+                self.team.capacity = int(cap)
+            except:
+                capChangeText = "Enter a number value."
+
+        cancel = cButton(text="Cancel", size_hint=(1, .1)); cancel.bind(on_release=self.scrMain if self.camefrom == "tele" else self.scrAuton); displist.append(cancel)
+        PGMessage = "The robot %s pickup gears off of the ground." % ("CAN" if self.team.pickupGears else "CAN'T")
+        togglePG = cButton(text=PGMessage, rgb=[(201/255),(28/255),(147/255)], size_hint=(.5, .45)); togglePG.bind(on_release=self.canPickGear); displist.append(togglePG)
+        PBMessage = "The robot %s pickup balls off of the ground." % ("CAN" if self.team.pickupBalls else "CAN'T")
+        togglePB = cButton(text=PBMessage, rgb=[(201/255),(28/255),(147/255)], size_hint=(.5, .45)); togglePB.bind(on_release=self.canPickBall); displist.append(togglePB)
+        capLbl = cLabel(text="Capacity:\n%s" % self.team.capacity, rgb=[(201/255),(28/255),(147/255)], size_hint=(.5, .45)); displist.append(capLbl)
+        capChange = TextInput(hint_text=capChangeText, multiline=False, size_hint=(.5, .45)); capChange.bind(on_text_validate=lambda x: self.scrCapab(cap=capChange.text)); displist.append(capChange)
+
+        for i in displist:
+            self.add_widget(i)
+
+    def scrAuton(self, obj=None):
+        self.clear_widgets()
+        displist = list()
+        self.camefrom = "auton"
 
         cancel = Button(text="Cancel", size_hint=(1, .1)); cancel.bind(on_release=self.scrMain); displist.append(cancel)
-        PGMessage = "The robot %s pickup gears off of the ground." % ("CAN" if self.team.pickupGears else "CAN'T")
-        togglePG = Button(text=PGMessage, size_hint=(.5, .45)); togglePG.bind(on_release=self.canPickGear); displist.append(togglePG)
-        PBMessage = "The robot %s pickup balls off of the ground." % ("CAN" if self.team.pickupBalls else "CAN'T")
-        togglePB = Button(text=PBMessage, size_hint=(.5, .45)); togglePB.bind(on_release=self.canPickBall); displist.append(togglePB)
-        capLbl = Label(text="Capacity:\n%s" % self.team.capacity, size_hint=(.5, .45)); displist.append(capLbl)
-        capChange = TextInput(multiline=False, size_hint=(.5, .45)); capChange.bind(on_text_validate=lambda x: self.scrCapab(cap=int(capChange.text))); displist.append(capChange)
+
+        lowLbl = autonLabel(txt="Low", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
+        teamLbl = autonLabel(txt=self.team.number, rgb=[0, 0, 0, 1]); displist.append(teamLbl)
+        highLbl = autonLabel(txt="High", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl)
+
+        lowDisp = autonLabel(txt=self.team.aLowgoal, rgb=[(14/255),(201/255),(170/255)]); displist.append(lowDisp)
+        autonLbl = autonLabel(txt="Auton", rgb=[0, 0, 0, 1]); displist.append(autonLbl)
+        highDisp = autonLabel(txt=self.team.aHighgoal, rgb=[(28/255),(201/255),(40/255)]); displist.append(highDisp)
+
+        low1 = autonButton(txt="+1", rgb=[(14/255),(201/255),(170/255)]); low1.bind(on_release=lambda x: self.aAddLow(1)); displist.append(low1)
+        toggleTele = autonButton(txt="Teleop", rgb=[(201/255),(170/255),(28/255)]); toggleTele.bind(on_release=self.scrMain); displist.append(toggleTele)
+        high1 = autonButton(txt="+1", rgb=[(28/255),(201/255),(40/255)]); high1.bind(on_release=lambda x: self.aAddHigh(1)); displist.append(high1)
+
+        low5 = autonButton(txt="+5", rgb=[(14/255),(201/255),(170/255)]); low5.bind(on_release=lambda x: self.aAddLow(5)); displist.append(low5)
+        toggleCapab = autonButton(txt="Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
+        high3 = autonButton(txt="+3", rgb=[(28/255),(201/255),(40/255)]); high3.bind(on_release=lambda x: self.aAddHigh(3)); displist.append(high3)
+
+        lowm1 = autonButton(txt="-1", rgb=[(14/255),(201/255),(170/255)]); lowm1.bind(on_release=lambda x: self.aAddLow(-1)); displist.append(lowm1)
+        gearLbl = autonLabel(txt="Did the team pick up a gear?", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
+        highm1 = autonButton(txt="-1", rgb=[(28/255),(201/255),(40/255)]); highm1.bind(on_release=lambda x: self.aAddHigh(-1)); displist.append(highm1)
+
+        lowm5 = autonButton(txt="-5", rgb=[(14/255),(201/255),(170/255)]); lowm5.bind(on_release=lambda x: self.aAddLow(-5)); displist.append(lowm5)
+        gearBtn = autonButton(txt="yes" if self.team.aGears else "no", rgb=[(28/255),(129/255),(201/255)]); gearBtn.bind(on_release=self.aAddGear); displist.append(gearBtn)
+        highm3 = autonButton(txt="-3", rgb=[(28/255),(201/255),(40/255)]); highm3.bind(on_release=lambda x: self.aAddHigh(-3)); displist.append(highm3)
 
         for i in displist:
             self.add_widget(i)
@@ -249,8 +300,13 @@ class Screen(StackLayout):
         for i in displist:
             self.add_widget(i)
 
-class myLabel(Widget):
-    pass
+#lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
+#sea foam green: , rgb=[(14/255),(201/255),(170/255)] : low goal
+#dark magenta:   , rgb=[(201/255),(28/255),(147/255)] : climbed, capab
+#fair blue:      , rgb=[(28/255),(129/255),(201/255)] : gears
+#happy green:    , rgb=[(28/255),(201/255),(40/255)] :  high goal
+#fair orange:    , rgb=[(201/255),(170/255),(28/255)] : switch
+#black:          , rgb=[0, 0, 0, 1] :                   title
 
 class MyApp(App):
     def build(self):

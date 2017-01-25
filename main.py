@@ -27,7 +27,6 @@ class cLabel(Label):
     def __init__(self, rgb=[0.5,0.5,0.5], **kwargs):
         self.rgb = rgb + [1]
         super(cLabel, self).__init__(**kwargs)
-
 class cButton(Button):
     def __init__(self, rgb=[0.5,0.5,0.5], **kwargs):
         editedRGB = rgb + [1]
@@ -92,37 +91,42 @@ class Screen(StackLayout):
         self.lastLowVal = 0
         self.choose()
 
-    def choose(self):
+    def choose(self, hint="", obj=None):
         self.clear_widgets()
-        self.teamsel =  TextInput(multiline=False, size_hint=(.5, (1/3)))
-        self.roundsel = TextInput(multiline=False, size_hint=(.5, (1/3)))
-        gobutton = cButton(text="Go", size_hint=(1, (1/3)))
+        self.teamsel =  TextInput(hint_text=hint, multiline=False, size_hint=(.5, .25))
+        self.roundsel = TextInput(hint_text=hint, multiline=False, size_hint=(.5, .25))
+        self.name = TextInput(multiline=False, size_hint=(.5, .25))
+        self.name.bind(on_text_validate=self.pressGo)
+        gobutton = cButton(text="Go", size_hint=(1, .25))
         gobutton.bind(on_release=self.pressGo)
-        self.add_widget(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter team name:", size_hint=(.5, (1/3))))
+        self.add_widget(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter team number:", size_hint=(.5, .25)))
         self.add_widget(self.teamsel)
-        self.add_widget(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter round number:", size_hint=(.5, (1/3))))
+        self.add_widget(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter round number:", size_hint=(.5, .25)))
         self.add_widget(self.roundsel)
+        self.add_widget(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter your full name:", size_hint=(.5, .25)))
+        self.add_widget(self.name)
         self.add_widget(gobutton)
 
     def pressGo(self, obj):
         if self.teamsel.text and self.roundsel.text:
-            self.setTeam(self.teamsel.text, self.roundsel.text)
+            self.setTeam(self.teamsel.text, self.roundsel.text, self.name.text)
         else:
             print("unable to setTeam, number %s, round %s" % (self.teamsel.text, self.roundsel.text))
-            self.choose()
+            self.choose(hint="Enter a number value.")
 
-    def setTeam(self, team, round):
+    def setTeam(self, team, round, name):
         self.team = Team(team)
         self.team.round = round
-        db = sqlite3.connect("test")
+
+        db = sqlite3.connect("rounddat.db")
         c = db.cursor()
-        c.execute("SELECT * from `main` where round = ? and team = ?", (round, team))
+        c.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=?", (round, team))
         if not c.fetchone():
-            db.execute("INSERT INTO `main`(`round`,`team`) VALUES (?,?);", (round, team))
+            db.execute("UPDATE `main` SET `scouterName`=? WHERE `round`=? AND `team`=?", (name, round, team))
+            db.execute("INSERT INTO `main`(`round`,`team`,`scouterName`) VALUES (?,?,?);", (round, team, name))
             db.commit()
         else:
             self.team.putData(c)
-        #TODO add else statement that puts stored data from database into the self.team
         c.close()
         db.close()
         self.scrMain()
@@ -168,7 +172,7 @@ class Screen(StackLayout):
             #line 1
         lowLbl =       largeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
         dummyLbl =     cLabel(text=" ", rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl)
-        teamDisp =     largeLabel(str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp)
+        teamDisp =     largeLabel("Team " + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp)
         dummyLbl2 =    cLabel(text=" ", rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl2)
         highLbl =      largeSideLabel("High goal", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl)
 
@@ -190,7 +194,7 @@ class Screen(StackLayout):
         incLow20 =     smallSideButton("20", rgb=[(14/255),(201/255),(170/255)]); incLow20.bind(on_release=lambda x: self.addLow(20)); displist.append(incLow20)
         capDispAdd =   smallButton("+" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispAdd.bind(on_release=lambda x: self.addLow(self.team.capacity)); displist.append(capDispAdd)
         capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity)); displist.append(capDispSub)
-        toggleTeam =   largeButton("Team", rgb=[(201/255),(170/255),(28/255)]); toggleTeam.bind(on_release=lambda x: self.choose()); displist.append(toggleTeam)
+        toggleTeam =   largeButton("Team", rgb=[(201/255),(170/255),(28/255)]); toggleTeam.bind(on_release=self.areYouSure); displist.append(toggleTeam)
         toggleExit =   largeButton("Exit", rgb=[(201/255),(170/255),(28/255)]); toggleExit.bind(on_release=self.scrExit); displist.append(toggleExit)
         addHigh1 =     largeSideButton("-3", rgb=[(28/255),(201/255),(40/255)]); addHigh1.bind(on_release=lambda x: self.addHigh(-3)); displist.append(addHigh1)
 
@@ -216,6 +220,7 @@ class Screen(StackLayout):
     def scrExit(self, obj=None):
         self.clear_widgets()
         displist = list()
+        self.camefrom = "exit"
 
         cancel =   Button(text="Cancel", size_hint=(1,.1)); cancel.bind(on_release=self.scrMain); displist.append(cancel)
         saveExit = Button(text="Save and exit", size_hint=(1,.8)); saveExit.bind(on_release=self.saveAndExit); displist.append(saveExit)
@@ -279,34 +284,47 @@ class Screen(StackLayout):
         for i in displist:
             self.add_widget(i)
 
-    def saveAndExit(self, obj=None):
-        db = sqlite3.connect("test")
-        d = self.team.getAttr()
-        print(d)
-        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=? WHERE `team`=? AND `round`=?;",
-                   (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["number"],d["round"])
-                   )
-        db.commit()
-        db.close()
-        quit()
-
     def areYouSure(self, obj=None):
         self.clear_widgets()
         displist = list()
+
+        if self.camefrom == "exit":
+            def func(obj=None):
+                self.save()
+                quit()
+        if self.camefrom == "tele":
+            def func(obj=None):
+                self.save()
+                self.choose()
+
         AYSLbl = Label(text="Are you sure?", size_hint=(1,.1)); displist.append(AYSLbl)
-        yes = Button(text="Yes", size_hint=(1,.4)); yes.bind(on_release=quit); displist.append(yes)
+        yes = Button(text="Yes", size_hint=(1,.4)); yes.bind(on_release=func); displist.append(yes)
         no =  Button(text="No", size_hint=(1,.5)); no.bind(on_release=self.scrMain); displist.append(no)
 
         for i in displist:
             self.add_widget(i)
 
+    def save(self, obj=None):
+        db = sqlite3.connect("rounddat.db")
+        d = self.team.getAttr()
+        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?WHERE`team`=?AND`round`=?;",
+                   (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["number"],d["round"],d["aHighgoal"],d["aLowgoal"],d["aGears"])
+                   )
+        db.commit()
+        db.close()
+
+    def saveAndExit(self, obj=None):
+        self.save()
+        quit()
+
+
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
-#sea foam green: , rgb=[(14/255),(201/255),(170/255)] : low goal
-#dark magenta:   , rgb=[(201/255),(28/255),(147/255)] : climbed, capab
-#fair blue:      , rgb=[(28/255),(129/255),(201/255)] : gears
-#happy green:    , rgb=[(28/255),(201/255),(40/255)] :  high goal
-#fair orange:    , rgb=[(201/255),(170/255),(28/255)] : switch
-#black:          , rgb=[0, 0, 0, 1] :                   title
+#sea foam green: , rgb=[(14/255),(201/255),(170/255)] :  low goal
+#dark magenta:   , rgb=[(201/255),(28/255),(147/255)] :  climbed, capab
+#fair blue:      , rgb=[(28/255),(129/255),(201/255)] :  gears
+#happy green:    , rgb=[(28/255),(201/255),(40/255)] :   high goal
+#fair orange:    , rgb=[(201/255),(170/255),(28/255)] :  switch
+#black:          , rgb=[0, 0, 0, 1] :                    title
 
 class MyApp(App):
     def build(self):

@@ -36,7 +36,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma seperated e.g. requirements = kivy
-requirements = sqlite3,kivy,hostpython3,python3crystax
+requirements = sqlite3,kivy,hostpython3,python3crystax,mysql_connector
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -72,7 +72,7 @@ orientation = landscape
 fullscreen = 1
 
 # (list) Permissions
-#android.permissions = INTERNET
+android.permissions = INTERNET
 
 # (int) Android API to use
 android.api = 19

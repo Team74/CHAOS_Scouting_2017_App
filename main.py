@@ -168,12 +168,18 @@ class Screen(StackLayout):
     #the following functions are called by the buttons on the interface when pressed
     def addLow(self, count):
         self.team.lowgoal += count
+        if self.team.lowgoal <= 0:
+            self.team.lowgoal = 0
         self.scrMain()
     def addHigh(self, count):
         self.team.highgoal += count
+        if self.team.highgoal <= 0:
+            self.team.highgoal = 0
         self.scrMain()
     def addGear(self, count):
         self.team.gears += count
+        if self.team.gears <= 0:
+            self.team.gears = 0
         self.scrMain()
     def canPickGear(self, obj=None):
         self.team.pickupGears = int(not self.team.pickupGears)
@@ -186,9 +192,13 @@ class Screen(StackLayout):
         self.scrMain()
     def aAddLow(self, count):
         self.team.aLowgoal += count
+        if self.team.aLowgoal <= 0:
+            self.team.aLowgoal = 0
         self.scrAuton()
     def aAddHigh(self, count):
         self.team.aHighgoal += count
+        if self.team.aHighgoal <= 0:
+            self.team.aHighgoal = 0
         self.scrAuton()
     def aAddGear(self, obj=None):
         self.team.aGears = int(not self.team.aGears)

@@ -105,16 +105,43 @@ class Team:
             debug("heres data stuff: %s" % data)
 
 class Screen(StackLayout):
+    prev = ''
     def __init__(self, **kwargs):
         super(Screen, self).__init__(**kwargs)
         self.lastLowVal = 0
         self.choose()
 
+    def getlastscouter (self, defalt=''):
+        db = sqlite3.connect ('rounddat.db')
+        pos = db.cursor()
+        res = pos.execute('SELECT * FROM lastscouter')
+        row = pos.fetchone()
+        pos.close()
+        db.close()
+        if row == None:
+            return defalt
+        else:
+            return row[0]
+
+    def setlastscouter (self, name):
+        print (name)
+        if self.getlastscouter(None) == None:
+            scouterexist = False
+        else:
+            scouterexist = True
+        db = sqlite3.connect ('rounddat.db')
+        if scouterexist:
+            db.execute("UPDATE `lastscouter` SET `name`=?", (name,))
+        else:
+            db.execute("INSERT INTO `lastscouter`(`name`) VALUES (?);", (name,))
+        db.commit()
+        db.close()
+
     def choose(self, hint="", obj=None):
         self.clear_widgets()
         self.teamsel =  TextInput(hint_text=hint, multiline=False, size_hint=(.5, .25))
         self.roundsel = TextInput(hint_text=hint, multiline=False, size_hint=(.5, .25))
-        self.name = TextInput(multiline=False, size_hint=(.5, .25))
+        self.name = TextInput(multiline=False, size_hint=(.5, .25), text=self.getlastscouter())
         self.name.bind(on_text_validate=self.pressGo)
         gobutton = cButton(text="Go", size_hint=(1, .25))
         gobutton.bind(on_release=self.pressGo)
@@ -129,6 +156,7 @@ class Screen(StackLayout):
     def pressGo(self, obj):
         if self.teamsel.text and self.roundsel.text:
             self.setTeam(self.teamsel.text, self.roundsel.text, self.name.text)
+            self.setlastscouter(self.name.text)
         else:
             print("unable to setTeam, number %s, round %s" % (self.teamsel.text, self.roundsel.text))
             self.choose(hint="Enter a number value.")

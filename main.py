@@ -298,8 +298,9 @@ class Screen(StackLayout):
         #row 1
         cancel =   Button(text="Cancel", size_hint=(1,.1)); cancel.bind(on_release=self.scrMain); displist.append(cancel)
         #row 2
-        saveExit = Button(text=self.didSave, size_hint=(.5,.8)); saveExit.bind(on_release=self.save); displist.append(saveExit)
-        upload = Button(text=self.didUpload, size_hint=(.5,.8)); upload.bind(on_release=self.upload); displist.append(upload)
+        saveExit = Button(text=self.didSave, size_hint=(.34,.8)); saveExit.bind(on_release=self.save); displist.append(saveExit)
+        upload = Button(text=self.didUpload, size_hint=(.33,.8)); upload.bind(on_release=self.upload); displist.append(upload)
+        Team = Button(text="Team", size_hint=(.33,.8)); Team.bind(on_release=lambda x: self.areYouSure("tele")); displist.append(Team)
         #row 3
         exit =     Button(text="Exit", size_hint=(1, .1)); exit.bind(on_release=self.areYouSure); displist.append(exit)
 
@@ -362,15 +363,21 @@ class Screen(StackLayout):
         for i in displist:
             self.add_widget(i)
 
-    def areYouSure(self, obj=None):
+    def areYouSure(self, camefrom=None, obj=None):
         self.clear_widgets()
         displist = list()
+        if not camefrom == None:
+            self.camefrom = camefrom
 
         if self.camefrom == "exit":
             def func(obj=None):
                 self.save()
                 quit()
-        if self.camefrom == "tele":
+        elif self.camefrom == "tele":
+            def func(obj=None):
+                self.save()
+                self.choose()
+        else:
             def func(obj=None):
                 self.save()
                 self.choose()

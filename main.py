@@ -91,7 +91,7 @@ class Team:
     def getAttr(self):
         return vars(self)
 
-    def putData(self, c): #TODO: add support for loading auton vals
+    def putData(self, c):
         c.execute("SELECT * FROM `main` WHERE `team`=? AND `round`=? AND `event`=?", (self.number, self.round, self.event))
         data = list(c.fetchone())
         for i in range(len(data)):
@@ -99,7 +99,7 @@ class Team:
                 data[i] = 0
         try:
             self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[7]; self.capacity=data[8]; self.pickupBalls=data[9]; self.pickupGears=data[10]
-            self.aLowgoal=data[11]; self.aHighgoal=data[12]; self.aGears=data[13]; self.aCrossed=data[14]
+            self.aLowgoal=data[11]; self.aHighgoal=data[12]; self.aGears=data[13]; self.aCrossed=data[14]; self.color=data[15]
         except TypeError:
             debug("whoops, putdata got a typeerror")
             debug("heres data stuff: %s" % data)
@@ -251,9 +251,13 @@ class Screen(StackLayout):
         highLbl =      largeSideLabel("High goal", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl)
 
             #line 2
+        teamColor = self.team.Color
         lowDisp =      largeSideLabel(str(self.team.lowgoal), rgb=[(14/255),(201/255),(170/255)]); displist.append(lowDisp)
-        dummyLbl4 =    cLabel(text="Teleop", rgb=[0, 0, 0, 1], size_hint=(.69, .075)); displist.append(dummyLbl4)
+        toggleColor =  largeButton(text="team")
+        dummyLbl4 =    largeLabel(text="Teleop", rgb=[0, 0, 0, 1]); displist.append(dummyLbl4)
+        dummyLbl9 =    largeLabel(text="", rgb=[0,0,0,1])
         highDisp =     largeSideLabel(str(self.team.highgoal), rgb=[(28/255),(201/255),(40/255)]); displist.append(highDisp)
+
 
             #line 3
         incLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(1)); displist.append(incLow1)
@@ -440,6 +444,8 @@ class Screen(StackLayout):
 #happy green:    , rgb=[(28/255),(201/255),(40/255)] :   high goal
 #fair orange:    , rgb=[(201/255),(170/255),(28/255)] :  switch
 #black:          , rgb=[0, 0, 0, 1] :                    title
+#blue:           , rgb=[(25/255), 0, 0] :                team blue
+#red:            , rgb=[0, 0, (25/255)] :                team red
 
 class MyApp(App):
     def build(self):

@@ -48,7 +48,7 @@ class cButton(Button):
 #the following functions are for decluttering the scr functions
 def smallButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):
     return cButton(text=txt, rgb=rgb, size_hint=(.115, height))
-def smallLabel(txt, rgb=[.5,.5,.5], height=.075):
+def smallLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
     return cLabel(text=txt, rgb=rgb, size_hint=(.115, height))
 
 def smallSideButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):
@@ -88,6 +88,7 @@ class Team:
         self.aLowgoal = 0
         self.aGears = 0
         self.aCrossed = 0
+        self.color = True
 
     def getAttr(self):
         return vars(self)
@@ -173,7 +174,10 @@ class Screen(StackLayout):
         c.execute("SELECT `currentEvent` FROM `events`")
         self.team.event = c.fetchone()[0]
         debug(self.team.event)
-        self.team.color = True
+        if self.team.color == None:
+            self.team.color = True
+        else:
+            self.team.color = False
         if self.team.color == True:
             self.buttoncolor = [(200/255), 0, 0]
         else:

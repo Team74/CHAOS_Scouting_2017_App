@@ -391,12 +391,14 @@ class Screen(StackLayout):
     def scrnotes(self, obj=None, cap=None):
         self.clear_widgets()
         displist = list()
-        notesText = self.savednotes
+        '''notesText = self.savednotes''' 
 
         #row 1
         cancel = cButton(text="Cancel", size_hint=(1, .1)); cancel.bind(on_release=self.scrMain if self.camefrom == "tele" else self.scrAuton); displist.append(cancel)
         #row 2
-        notes = TextInput(hint_text=notesText, multiline=True, size_hint=(1, .9)); notes.bind(on_text_validate=lambda x: self.scrnotes(cap=notes.text)); displist.append(notes)
+        notes = TextInput(multiline=True, size_hint=(1, .8)); notes.bind(on_text_validate=lambda x: self.scrnotes); displist.append(notes)
+        #row 3
+        save = cButton(text="save", size_hint=(1, .1)); save.bind(on_release=self.scrMain if self.camefrom == "tele" else self.scrAuton); displist.append(save)
 
         for widg in displist:
             self.add_widget(widg)

@@ -1,0 +1,11 @@
+match,Team,Team color,scouterName,Event,Gears,AptGears,High Goals,Low Goals,Capacity,Pick up Balls,Pick up Gears,aHighgoal,aLowgoal,aGears,aCrossed,Climbed
+0,1,Blue,jacob,yeet lol,0,0,6,0,no,0,no,0,0,0,no,no,
+1,0,error,ben,yeet lol,-103,None,-2,-28,no,0,no,0,0,0,no,no,
+1,1,Blue,jacob,yeet lol,0,3,3,0,no,0,no,0,0,0,no,no,
+1,74,error,Carl Best,yeet lol,56,None,6,3,yes,32,yes,23,7,1,no,yes,
+3,183,error,Carl Best,yeet lol,21,None,8,4,yes,17,yes,9,13,1,yes,yes,
+15,21,Red,jacob,yeet lol,0,None,0,0,no,0,no,0,0,0,no,no,
+74,1,Red,jacob,yeet lol,56,None,6,3,yes,1,yes,7,0,1,error,error,
+74,34,error,jacob,yeet lol,69,None,69,69,no,69,no,69,59,1,yes,yes,
+111,111,error,jacob,yeet lol,0,None,0,0,no,0,no,0,0,0,yes,no,
+1234567890,12,error,jacob,yeet lol,91,None,5,0,no,0,no,0,0,0,no,no,

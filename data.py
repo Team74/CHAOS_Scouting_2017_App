@@ -8,7 +8,7 @@ class scout:
         pos = db.cursor()
         res = pos.execute('SELECT * FROM main')
         out = open('scr', 'w')
-        out.write('Round'+','+ 'Team'+','+ 'scouterName'+','+'Event' +','+ 'Gears'+','+ 'High Goals'+','+ 'Low Goals'+','+ 'Capacity'+','+ 'Pick up Balls')
+        out.write('match'+','+ 'Team'+','+ 'Team color'+','+ 'scouterName'+','+ 'Event' +','+ 'Gears'+','+ 'Miss Gears'+','+ 'High Goals'+','+ 'Miss High Goal'+','+'Low Goals'+','+ 'Capacity'+','+ 'Pick up Balls')
         out.write(','+ 'Pick up Gears' +','+ 'aHighgoal'+','+ 'aLowgoal'+','+ 'aGears'+','+ 'aCrossed'+','+ 'Climbed'+ '\n')
         sortedData = sorted(pos.fetchall(), key=operator.itemgetter(3,0,1))
 
@@ -17,6 +17,7 @@ class scout:
             row9 = 'error'
             row13 = 'error'
             row14 = "error"
+            row15 = 'error'
 
             if ((row[7]) == 1):
                 row7 = 'yes'
@@ -34,9 +35,13 @@ class scout:
                 row14 = 'yes'
             elif ((row[14]) == 0):
                 row14 = 'no'
+            if ((row[15]) == 1):
+                row15 = 'Blue'
+            elif ((row[15]) == 0):
+                row15 = 'Red'
 
             print (str (row[1])+','+ str (row[0])+','+ str (row7)+','+ str (row9)+','+ str (row13) +','+ str (row14))
-            out.write(str (row[0])+',' +str (row[1])+','+ str (row[2])+','+ str (row[3])+','+ str (row[4])+','+ str (row[5])+','+ str (row[6]))
+            out.write(str (row[0])+',' +str (row[1])+','+ str (row15)+','+ str (row[2])+','+ str (row[3])+','+ str (row[4])+','+ str (row[16])+','+ str (row[5])+','+ str (row[6]))
             out.write(','+ str (row7)+','+ str (row[8])+','+ str (row9)+','+ str (row[10])+','+ str (row[11])+','+ str (row[12]))
             out.write(','+ str (row13)+','+ str (row14)+','+ '\n')
 

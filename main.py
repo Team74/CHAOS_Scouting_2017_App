@@ -129,7 +129,7 @@ class Team:
             if data[i] == None:
                 data[i] = 0
         try:
-            self.capacity=data[1]
+            self.capacity=data[1]; self.pickupBalls=data[2]; self.pickupGears=data[3]
         except:
             debug('ok')
 
@@ -168,6 +168,8 @@ class Screen(StackLayout):
         db.execute('''CREATE TABLE IF NOT EXISTS `team`(
                                                         `team`INTEGER NOT NULL,
                                                         `capacity` INTEGER,
+                                                        `pickupBalls` INTEGER,
+                                                        `pickupGears` INTEGER,
                                                         PRIMARY KEY(`team`))''')
 
     def getlastscouter (self, defalt=''):
@@ -283,7 +285,7 @@ class Screen(StackLayout):
             self.buttoncolor =[0, 0,(200/255)]
         #position
         if self.team.posfin == 1:
-            self.team.tog = 'boliler'
+            self.team.tog = 'boiler'
             self.team.togcolor = [(117/255), (117/255), (117/255)]
         elif self.team.posfin == 2:
             self.team.tog = 'middle'
@@ -575,8 +577,8 @@ class Screen(StackLayout):
         db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
                    (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["aGears"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    )
-        db.execute("UPDATE `team` SET `capacity`=? WHERE `team`=?",
-                    (d["capacity"], self.team.number))
+        db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
+                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number))
         c = db.cursor()
         c.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event)) #just to check
         debug(c.fetchone())
@@ -607,8 +609,8 @@ class Screen(StackLayout):
         c.execute("SELECT * FROM `team` WHERE `team`=%s", (self.team.number,))
         if not c.fetchone():
             c.execute("INSERT INTO `team`(`team`) VALUES (%s);", (self.team.number,))
-        c.execute("UPDATE `team` SET `capacity`=%s WHERE `team`=%s",
-                  (d['capacity'],d['number'])
+        c.execute("UPDATE `team` SET `capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s WHERE `team`=%s",
+                  (d['capacity'],d["pickupGears"],d["pickupBalls"],d['number'])
                   )
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[0], fetchone[1], fetchone[3]))

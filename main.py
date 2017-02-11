@@ -116,8 +116,8 @@ class Team:
                 data[i] = 0
         print(str(len(data)))
         try:
-            self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[7]; self.capacity=data[8]; self.pickupBalls=data[9]; self.pickupGears=data[10]
-            self.aLowgoal=data[11]; self.aHighgoal=data[12]; self.aGears=data[13]; self.aCrossed=data[14]; self.color=data[15]; debug('working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
+            self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
+            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.aGears=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
             self.prevnotes=data[18]; self.posfin=data[19]
         except TypeError:
             debug("whoops, putdata got a typeerror")
@@ -537,15 +537,16 @@ class Screen(StackLayout):
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()
-        cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         fetchone = list(cl.fetchone())
-        fetchoneList = [fetchone[2]]+fetchone[4:]+fetchone[:2]+[fetchone[3]] #reordering the fetchone to fit into mysql
+        fetchoneList = fetchone
+
         debug("fetchone:     "+str(fetchone))
         debug("fetchoneList: "+str(fetchoneList))
-        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[0], fetchone[1], fetchone[3]))
+        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.round, self.team.number, self.team.event))
         if not c.fetchone():
-            c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", (fetchone[0],fetchone[1],fetchone[3]))
-        c.execute("UPDATE `main` SET `scouterName`=%s,`highgoal`=%s,`lowgoal`=%s,`gears`=%s,`pickupGears`=%s,`pickupBalls`=%s,`climbed`=%s,`capacity`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
+            c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", (self.team.round, self.team.number, self.team.event))
+        c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
                   fetchoneList
                   )
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[0], fetchone[1], fetchone[3]))

@@ -123,6 +123,16 @@ class Team:
             debug("whoops, putdata got an error")
             debug("heres data stuff: %s" % data)
 
+        c.execute("SELECT * FROM `team` WHERE `team`=?", (self.number))
+        data = list(c.fetchone())
+        for i in range(len(data)):
+            if data[i] == None:
+                data[i] = 0
+        try:
+            self.capacity=data[1]
+        except:
+            debug('ok')
+
 class Screen(StackLayout):
     prev = ''
     def __init__(self, **kwargs):
@@ -155,6 +165,10 @@ class Screen(StackLayout):
                                                         PRIMARY KEY(`team`,`round`))''')
         db.execute("CREATE TABLE IF NOT EXISTS `lastscouter` (`name` TEXT)")
         debug("this got run")
+        db.execute('''CREATE TABLE IF NOT EXISTS `team`(
+                                                        `team`INTEGER NOT NULL,
+                                                        `capacity` INTEGER,
+                                                        PRIMARY KEY(`team`))''')
 
     def getlastscouter (self, defalt=''):
         db = sqlite3.connect('rounddat.db')
@@ -188,8 +202,8 @@ class Screen(StackLayout):
         displist = list()
 
         displist.append(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter team number:", size_hint=(.5, .25)))
-        self.teamsel =  TextInput(text=tText,focus=tsFocus,hint_text=hint,multiline=False,size_hint=(.5, .25))
-        self.teamsel.bind(on_text_validate=self.choose(rsFocus=True, tText=self.teamsel.text)) #Used to focus onto the next text input box
+        self.teamsel =  TextInput(text=tText,hint_text=hint,multiline=False,size_hint=(.5, .25))
+        '''self.teamsel.bind(on_text_validate=lambda x: self.choose(rsFocus=True, tText=self.teamsel.text)) #Used to focus onto the next text input box'''
         displist.append(self.teamsel)
 
         displist.append(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter round number:", size_hint=(.5, .25)))
@@ -244,6 +258,16 @@ class Screen(StackLayout):
         else:
             self.team.putData(cl)
         debug(self.team.color)
+
+        found = True
+
+        cl.execute("SELECT * FROM `team` WHERE `team`=?", (team))
+        found = cl.fetchone()
+        if not found:
+            dbl.execute("INSERT INTO `team`(`team`) VALUES (?);", (team))
+            dbl.commit()
+
+
         #color
         if self.team.color == None:
             self.team.color = True
@@ -551,6 +575,8 @@ class Screen(StackLayout):
         db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
                    (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["aGears"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    )
+        db.execute("UPDATE `team` SET `capacity`=? WHERE `team`=?",
+                    (d["capacity"], self.team.number))
         c = db.cursor()
         c.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event)) #just to check
         debug(c.fetchone())
@@ -577,6 +603,14 @@ class Screen(StackLayout):
         c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
                   fetchoneList
                   )
+        d = self.team.getAttr()
+        c.execute("SELECT * FROM `team` WHERE `team`=%s", (self.team.number,))
+        if not c.fetchone():
+            c.execute("INSERT INTO `team`(`team`) VALUES (%s);", (self.team.number,))
+        c.execute("UPDATE `team` SET `capacity`=%s WHERE `team`=%s",
+                  (d['capacity'],d['number'])
+                  )
+
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[0], fetchone[1], fetchone[3]))
         debug(c.fetchone())
         db.commit()

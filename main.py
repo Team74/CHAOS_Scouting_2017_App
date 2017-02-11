@@ -132,14 +132,13 @@ class Screen(StackLayout):
 
     def makeDB(self, db):
         db.execute('''CREATE TABLE IF NOT EXISTS `main`(
-                                                        `team` INTEGER NOT NULL,
                                                         `round` INTEGER NOT NULL,
+                                                        `team` INTEGER NOT NULL,
                                                         `scouterName` TEXT NOT NULL,
                                                         `event` INTEGER,
                                                         `gears` INTEGER,
                                                         `highgoal` INTEGER,
                                                         `lowgoal` INTEGER,
-                                                        `climbed` INTEGER,
                                                         `capacity` INTEGER,
                                                         `pickupBalls` INTEGER,
                                                         `pickupGears` INTEGER,
@@ -147,8 +146,12 @@ class Screen(StackLayout):
                                                         `aLowgoal` INTEGER,
                                                         `aGears` INTEGER,
                                                         `aCrossed` INTEGER,
+                                                        `climbed` INTEGER,
                                                         `team color` INTEGER,
+                                                        `AptGears` INTEGER,
                                                         `MissHighGoal` INTEGER,
+                                                        `notes` TEXT,
+                                                        `position` INTEGER,
                                                         PRIMARY KEY(`team`,`round`))''')
         db.execute("CREATE TABLE IF NOT EXISTS `lastscouter` (`name` TEXT)")
         debug("this got run")
@@ -543,7 +546,7 @@ class Screen(StackLayout):
         db = sqlite3.connect("rounddat.db") #connect to local db
         d = self.team.getAttr() #get information dict from self.team
         debug(d)
-        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `Team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
+        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
                    (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["aGears"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    )
         c = db.cursor()

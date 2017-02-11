@@ -130,8 +130,32 @@ class Screen(StackLayout):
         self.lastLowVal = 0
         self.choose()
 
+    def makeDB(self, db):
+        db.execute('''CREATE TABLE IF NOT EXISTS `main`(
+                                                        `team` INTEGER NOT NULL,
+                                                        `round` INTEGER NOT NULL,
+                                                        `scouterName` TEXT NOT NULL,
+                                                        `event` INTEGER,
+                                                        `gears` INTEGER,
+                                                        `highgoal` INTEGER,
+                                                        `lowgoal` INTEGER,
+                                                        `climbed` INTEGER,
+                                                        `capacity` INTEGER,
+                                                        `pickupBalls` INTEGER,
+                                                        `pickupGears` INTEGER,
+                                                        `aHighgoal` INTEGER,
+                                                        `aLowgoal` INTEGER,
+                                                        `aGears` INTEGER,
+                                                        `aCrossed` INTEGER,
+                                                        `team color` INTEGER,
+                                                        `MissHighGoal` INTEGER,
+                                                        PRIMARY KEY(`team`,`round`))''')
+        db.execute("CREATE TABLE IF NOT EXISTS `lastscouter` (`name` TEXT)")
+        debug("this got run")
+
     def getlastscouter (self, defalt=''):
-        db = sqlite3.connect ('rounddat.db')
+        db = sqlite3.connect('rounddat.db')
+        self.makeDB(db)
         pos = db.cursor()
         res = pos.execute('SELECT * FROM lastscouter')
         row = pos.fetchone()
@@ -143,7 +167,7 @@ class Screen(StackLayout):
             return row[0]
 
     def setlastscouter (self, name):
-        print (name)
+        print(name)
         if self.getlastscouter(None) == None:
             scouterexist = False
         else:
@@ -159,7 +183,6 @@ class Screen(StackLayout):
     def choose(self, hint="", obj=None):
         self.clear_widgets()
         displist = list()
-
 
         displist.append(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter team number:", size_hint=(.5, .25)))
         self.teamsel =  TextInput(hint_text=hint, multiline=False, size_hint=(.5, .25)); displist.append(self.teamsel)
@@ -205,7 +228,7 @@ class Screen(StackLayout):
             cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=?", (round, team))
             found = cl.fetchone()
         except:
-            dbl.execute('CREATE TABLE "main" ( `team` INTEGER NOT NULL, `round` INTEGER NOT NULL, `scouterName` TEXT NOT NULL, `event` INTEGER, `gears` INTEGER, `highgoal` INTEGER, `lowgoal` INTEGER, `climbed` INTEGER, `capacity` INTEGER, `pickupBalls` INTEGER, `pickupGears` INTEGER, `aHighgoal` INTEGER, `aLowgoal` INTEGER, `aGears` INTEGER, `aCrossed` INTEGER, PRIMARY KEY(`team`,`round`) )')
+            self.makeDB()
             found = False
             pass
         if not found:

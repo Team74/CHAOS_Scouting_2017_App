@@ -117,10 +117,10 @@ class Team:
         print(str(len(data)))
         try:
             self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[7]; self.capacity=data[8]; self.pickupBalls=data[9]; self.pickupGears=data[10]
-            self.aLowgoal=data[11]; self.aHighgoal=data[12]; self.aGears=data[13]; self.aCrossed=data[14]; self.color=data[15]; debug('working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
-            self.prevnotes=data[18]; self.posfin=data[19]
-        except TypeError:
-            debug("whoops, putdata got a typeerror")
+            self.aLowgoal=data[11]; self.aHighgoal=data[12]; self.aGears=data[13]; self.aCrossed=data[14]; self.color=data[15]; debug('working'); self.AptGears=data[16]
+            self.MissHighGoal=data[17]; self.prevnotes=data[18]; self.posfin=data[19]
+        except:
+            debug("whoops, putdata got an error")
             debug("heres data stuff: %s" % data)
 
 class Screen(StackLayout):
@@ -128,7 +128,7 @@ class Screen(StackLayout):
     def __init__(self, **kwargs):
         super(Screen, self).__init__(**kwargs)
         self.lastLowVal = 0
-        self.choose()
+        self.choose(tsFocus=True)
 
     def makeDB(self, db):
         db.execute('''CREATE TABLE IF NOT EXISTS `main`(
@@ -148,7 +148,10 @@ class Screen(StackLayout):
                                                         `aGears` INTEGER,
                                                         `aCrossed` INTEGER,
                                                         `team color` INTEGER,
+                                                        `AptGears` INTEGER,
                                                         `MissHighGoal` INTEGER,
+                                                        `notes` TEXT,
+                                                        `position` INTEGER,
                                                         PRIMARY KEY(`team`,`round`))''')
         db.execute("CREATE TABLE IF NOT EXISTS `lastscouter` (`name` TEXT)")
         debug("this got run")
@@ -180,25 +183,28 @@ class Screen(StackLayout):
         db.commit()
         db.close()
 
-    def choose(self, hint="", obj=None):
+    def choose(self, hint="", obj=None, tsFocus=False,rsFocus=False,nFocus=False, tText="", rText="", nText=""):
         self.clear_widgets()
         displist = list()
 
         displist.append(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter team number:", size_hint=(.5, .25)))
-        self.teamsel =  TextInput(hint_text=hint, multiline=False, size_hint=(.5, .25)); displist.append(self.teamsel)
+        self.teamsel =  TextInput(text=tText,focus=tsFocus,hint_text=hint,multiline=False,size_hint=(.5, .25))
+        self.teamsel.bind(on_text_validate=self.choose(rsFocus=True, tText=self.teamsel.text)) #Used to focus onto the next text input box
+        displist.append(self.teamsel)
 
         displist.append(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter round number:", size_hint=(.5, .25)))
-        self.roundsel = TextInput(hint_text=hint, multiline=False, size_hint=(.5, .25)); displist.append(self.roundsel)
+        self.roundsel = TextInput(focus=rsFocus, hint_text=hint, multiline=False, size_hint=(.5, .25))
+        displist.append(self.roundsel)
 
         displist.append(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter your full name:", size_hint=(.5, .25)))
-        self.name = TextInput(multiline=False, size_hint=(.5, .25), text=self.getlastscouter()); self.name.bind(on_text_validate=self.pressGo); displist.append(self.name)
+        self.name = TextInput(focus=nFocus, multiline=False, size_hint=(.5, .25), text=self.getlastscouter())
+        self.name.bind(on_text_validate=self.pressGo)
+        displist.append(self.name)
 
         gobutton = cButton(text="Go", size_hint=(1, .25), padding=[10,10]); gobutton.bind(on_press=self.pressGo); displist.append(gobutton)
 
         for widg in displist:
             self.add_widget(widg)
-
-
 
     def pressGo(self, obj):
         if self.teamsel.text and self.roundsel.text:
@@ -479,7 +485,6 @@ class Screen(StackLayout):
 
         for widg in displist:
             self.add_widget(widg)
-
 
     def scrAuton(self, obj=None):
         self.clear_widgets()

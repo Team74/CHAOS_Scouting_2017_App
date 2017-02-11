@@ -123,15 +123,18 @@ class Team:
             debug("whoops, putdata got an error")
             debug("heres data stuff: %s" % data)
 
+    def putCData(self, c):
         c.execute("SELECT * FROM `team` WHERE `team`=?", (self.number))
         data = list(c.fetchone())
         for i in range(len(data)):
             if data[i] == None:
                 data[i] = 0
+        debug('hjdsajhasjhsajhsdajh')
         try:
-            self.capacity=data[1]; self.pickupBalls=data[2]; self.pickupGears=data[3]
+            self.capacity=data[1]; self.pickupBalls=data[2]; self.pickupGears=data[3]; debug(data[1])
         except:
             debug('ok')
+
 
 class Screen(StackLayout):
     prev = ''
@@ -205,7 +208,6 @@ class Screen(StackLayout):
         displist = list()
 
         displist.append(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter team number:", size_hint=(.5, .25)))
-<<<<<<< HEAD
         self.teamsel =  TextInput(hint_text=hint,multiline=False,size_hint=(.5, .25))
         displist.append(self.teamsel)
 
@@ -247,6 +249,16 @@ class Screen(StackLayout):
         dbl = sqlite3.connect("rounddat.db") #connect to local database
         cl = dbl.cursor()
         found = True
+
+        cl.execute("SELECT * FROM `team` WHERE `team`=?", (team))
+        found = cl.fetchone()
+        if not found:
+            dbl.execute("INSERT INTO `team`(`team`) VALUES (?);", (team))
+            dbl.commit()
+        else:
+            self.team.putCData(cl)
+
+        found = True
         try:
             cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=?", (round, team))
             found = cl.fetchone()
@@ -261,15 +273,6 @@ class Screen(StackLayout):
         else:
             self.team.putData(cl)
         debug(self.team.color)
-
-        found = True
-
-        cl.execute("SELECT * FROM `team` WHERE `team`=?", (team))
-        found = cl.fetchone()
-        if not found:
-            dbl.execute("INSERT INTO `team`(`team`) VALUES (?);", (team))
-            dbl.commit()
-
 
         #color
         if self.team.color == None:

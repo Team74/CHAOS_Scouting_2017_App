@@ -124,10 +124,12 @@ class Team:
             debug("heres data stuff: %s" % data)
 
         c.execute("SELECT * FROM `team` WHERE `team`=?", (self.number))
-        data = list(c.fetchone())
-        for i in range(len(data)):
-            if data[i] == None:
-                data[i] = 0
+        data = c.fetchone()
+        if data:
+            data = list(data)
+            for i in range(len(data)):
+                if data[i] == None:
+                    data[i] = 0
         try:
             self.capacity=data[1]
         except:
@@ -203,12 +205,7 @@ class Screen(StackLayout):
         displist = list()
 
         displist.append(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter team number:", size_hint=(.5, .25)))
-<<<<<<< HEAD
         self.teamsel =  TextInput(hint_text=hint,multiline=False,size_hint=(.5, .25))
-=======
-        self.teamsel =  TextInput(text=tText,hint_text=hint,multiline=False,size_hint=(.5, .25))
-        '''self.teamsel.bind(on_text_validate=lambda x: self.choose(rsFocus=True, tText=self.teamsel.text)) #Used to focus onto the next text input box'''
->>>>>>> bd793d7c217ddf31bd8bbc7bab5436fd06fa2e91
         displist.append(self.teamsel)
 
         displist.append(cLabel(rgb=[(14/255),(201/255),(170/255)], text="Enter round number:", size_hint=(.5, .25)))

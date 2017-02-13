@@ -123,6 +123,7 @@ class Team:
             debug("whoops, putdata got an error")
             debug("heres data stuff: %s" % data)
 
+    def putCData(self, c):
         c.execute("SELECT * FROM `team` WHERE `team`=?", (self.number))
         data = c.fetchone()
         if data:
@@ -130,10 +131,13 @@ class Team:
             for i in range(len(data)):
                 if data[i] == None:
                     data[i] = 0
+        else:
+            debug("data is lame-o, there is none of it")
         try:
-            self.capacity=data[1]
+            self.capacity=data[1]; self.pickupBalls=data[2]; self.pickupGears=data[3]; debug(data[1])
         except:
             debug('ok')
+
 
 class Screen(StackLayout):
     prev = ''
@@ -171,6 +175,8 @@ class Screen(StackLayout):
         db.execute('''CREATE TABLE IF NOT EXISTS `team`(
                                                         `team`INTEGER NOT NULL,
                                                         `capacity` INTEGER,
+                                                        `pickupBalls` INTEGER,
+                                                        `pickupGears` INTEGER,
                                                         PRIMARY KEY(`team`))''')
 
     def getlastscouter (self, defalt=''):
@@ -246,6 +252,16 @@ class Screen(StackLayout):
         dbl = sqlite3.connect("rounddat.db") #connect to local database
         cl = dbl.cursor()
         found = True
+
+        cl.execute("SELECT * FROM `team` WHERE `team`=?", (team))
+        found = cl.fetchone()
+        if not found:
+            dbl.execute("INSERT INTO `team`(`team`) VALUES (?);", (team))
+            dbl.commit()
+        else:
+            self.team.putCData(cl)
+
+        found = True
         try:
             cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=?", (round, team))
             found = cl.fetchone()
@@ -260,15 +276,6 @@ class Screen(StackLayout):
         else:
             self.team.putData(cl)
         debug(self.team.color)
-
-        found = True
-
-        cl.execute("SELECT * FROM `team` WHERE `team`=?", (team))
-        found = cl.fetchone()
-        if not found:
-            dbl.execute("INSERT INTO `team`(`team`) VALUES (?);", (team))
-            dbl.commit()
-
 
         #color
         if self.team.color == None:
@@ -285,7 +292,7 @@ class Screen(StackLayout):
             self.buttoncolor =[0, 0,(200/255)]
         #position
         if self.team.posfin == 1:
-            self.team.tog = 'boliler'
+            self.team.tog = 'boiler'
             self.team.togcolor = [(117/255), (117/255), (117/255)]
         elif self.team.posfin == 2:
             self.team.tog = 'middle'
@@ -608,8 +615,8 @@ class Screen(StackLayout):
         db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
                    (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["aGears"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    )
-        db.execute("UPDATE `team` SET `capacity`=? WHERE `team`=?",
-                    (d["capacity"], self.team.number))
+        db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
+                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number))
         c = db.cursor()
         c.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event)) #just to check
         debug(c.fetchone())
@@ -640,8 +647,8 @@ class Screen(StackLayout):
         c.execute("SELECT * FROM `team` WHERE `team`=%s", (self.team.number,))
         if not c.fetchone():
             c.execute("INSERT INTO `team`(`team`) VALUES (%s);", (self.team.number,))
-        c.execute("UPDATE `team` SET `capacity`=%s WHERE `team`=%s",
-                  (d['capacity'],d['number'])
+        c.execute("UPDATE `team` SET `capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s WHERE `team`=%s",
+                  (d['capacity'],d["pickupGears"],d["pickupBalls"],d['number'])
                   )
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[0], fetchone[1], fetchone[3]))

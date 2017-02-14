@@ -616,7 +616,7 @@ class Screen(StackLayout):
                    (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["aGears"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    )
         db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
-                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number))
+                   (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number))
         c = db.cursor()
         c.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event)) #just to check
         debug(c.fetchone())

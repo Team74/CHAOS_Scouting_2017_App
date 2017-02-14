@@ -125,11 +125,14 @@ class Team:
 
     def putCData(self, c):
         c.execute("SELECT * FROM `team` WHERE `team`=?", (self.number,))
-        data = list(c.fetchone())
-        for i in range(len(data)):
-            if data[i] == None:
-                data[i] = 0
-        debug('hjdsajhasjhsajhsdajh')
+        data = c.fetchone()
+        if data:
+            data = list(data)
+            for i in range(len(data)):
+                if data[i] == None:
+                    data[i] = 0
+        else:
+            debug("data is lame-o, there is none of it")
         try:
             self.capacity=data[1]; self.pickupBalls=data[2]; self.pickupGears=data[3]; debug(data[1])
         except:

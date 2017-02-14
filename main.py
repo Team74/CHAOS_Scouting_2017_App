@@ -610,7 +610,7 @@ class Screen(StackLayout):
             self.add_widget(widg)
 
     def save(self, obj=None):
-        debug("save function")
+        debug("-----save function-----")
         db = sqlite3.connect("rounddat.db") #connect to local db
         d = self.team.getAttr() #get information dict from self.team
         debug(d)
@@ -618,13 +618,14 @@ class Screen(StackLayout):
                    (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["aGears"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    )
         db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
-                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number))
+                   (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number))
         c = db.cursor()
         c.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event)) #just to check
         debug(c.fetchone())
         db.commit()
         db.close()
         self.didSave = "Saved." #switch button text
+        debug("-----save function end-----")
         self.scrExit()
     def Aupload(self, obj=None):
         dbl = sqlite3.connect("rounddat.db")
@@ -640,7 +641,7 @@ class Screen(StackLayout):
         dbl.close()
 
     def upload(self, obj=None):
-        debug("upload function")
+        debug("-----upload function-----")
         db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db") #connect to local db
@@ -648,12 +649,14 @@ class Screen(StackLayout):
         cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         fetchone = list(cl.fetchone())
         fetchoneList = fetchone
-
         debug("fetchone:     "+str(fetchone))
         debug("fetchoneList: "+str(fetchoneList))
-        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.round, self.team.number, self.team.event))
-        if not c.fetchone():
-            c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", (self.team.round, self.team.number, self.team.event))
+        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, self.team.event))
+        test = c.fetchone()
+        if not test:
+            c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", (self.team.number, self.team.round, self.team.event))
+        elif test:
+            debug("THERE SHOULD BE DATA HERE: " + str(test))
         c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
                   fetchoneList
                   )
@@ -665,7 +668,7 @@ class Screen(StackLayout):
                   (d['capacity'],d["pickupGears"],d["pickupBalls"],d['number'])
                   )
 
-        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[0], fetchone[1], fetchone[3]))
+        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[-3], fetchone[-2], fetchone[-1]))
         debug(c.fetchone())
         db.commit()
         c.close()
@@ -673,6 +676,7 @@ class Screen(StackLayout):
         cl.close()
         dbl.close()
         self.didUpload = "Uploaded."
+        debug("-----upload function end-----")
         self.scrExit()
 
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5

@@ -405,7 +405,8 @@ class Screen(StackLayout):
         displist = list()
         self.camefrom = "tele"
         self.didSave = "Save" #reset menu button text
-        self.didUpload = "Upload (Save before uploading)"
+        self.didUpload = "               Upload \n (Save before uploading)"
+        self.didAupload = "Upload"
 
             #line 1
         lowLbl =       largeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
@@ -482,9 +483,10 @@ class Screen(StackLayout):
         #row 1
         cancel =   Button(text="Cancel", size_hint=(1,.1)); cancel.bind(on_release=self.scrMain); displist.append(cancel)
         #row 2
-        saveExit = Button(text=self.didSave, size_hint=(.34,.8)); saveExit.bind(on_release=self.save); displist.append(saveExit)
-        upload = Button(text=self.didUpload, size_hint=(.33,.8)); upload.bind(on_release=self.upload); displist.append(upload)
-        Team = Button(text="Team", size_hint=(.33,.8)); Team.bind(on_release=lambda x: self.areYouSure("tele")); displist.append(Team)
+        saveExit = Button(text=self.didSave, size_hint=(.25,.8)); saveExit.bind(on_release=self.save); displist.append(saveExit)
+        upload = Button(text=self.didUpload, size_hint=(.25,.8)); upload.bind(on_release=self.upload); displist.append(upload)
+        Aupload = Button(text=self.didAupload, size_hint=(.25,.8)); Aupload.bind(on_release=self.Aupload); displist.append(Aupload)
+        Team = Button(text="Team", size_hint=(.25,.8)); Team.bind(on_release=lambda x: self.areYouSure("tele")); displist.append(Team)
         #row 3
         exit =     Button(text="Exit", size_hint=(1, .1)); exit.bind(on_release=lambda x: self.areYouSure("exit")); displist.append(exit)
 
@@ -625,6 +627,18 @@ class Screen(StackLayout):
         self.didSave = "Saved." #switch button text
         debug("-----save function end-----")
         self.scrExit()
+    def Aupload(self, obj=None):
+        dbl = sqlite3.connect("rounddat.db")
+        cl = dbl.cursor()
+        cl.execute("SELECT team, round, scouterName FROM `main`")
+        for fetchone in cl.fetchall():
+            debug(fetchone[0])
+            debug(fetchone[1])
+            self.setTeam(fetchone[0], fetchone[1], fetchone[2])
+            self.upload()
+        self.didAupload = "Uploaded."
+        cl.close()
+        dbl.close()
 
     def upload(self, obj=None):
         debug("-----upload function-----")

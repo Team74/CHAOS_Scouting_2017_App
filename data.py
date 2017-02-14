@@ -8,11 +8,11 @@ class scout:
         pos = db.cursor()
         res = pos.execute('SELECT * FROM main')
         out = open('scr', 'w')
-        out.write('match'+','+ 'Team'+','+ 'Team color'+','+ 'position'+','+ 'scouterName'+','+ 'Event' +','+ 'Gears'+','+ 'Miss Gears'+','+ 'High Goals'+','+ 'Miss High Goal'+','+'Low Goals'+','+ 'Capacity'+','+ 'Pick up Balls')
+        out.write('match'+','+ 'Team'+','+ 'Team color'+','+ 'position'+','+ 'scouterName'+','+ 'Event' +','+ 'Gears'+','+ 'AptGears'+','+ 'High Goals'+','+ 'Miss High Goal'+','+'Low Goals'+','+ 'Capacity'+','+ 'Pick up Balls')
         out.write(','+ 'Pick up Gears' +','+ 'aHighgoal'+','+ 'aLowgoal'+','+ 'aGears'+','+ 'aCrossed'+','+ 'Climbed'+','+ 'Notes'+ '\n')
         sortedData = sorted(pos.fetchall(), key=operator.itemgetter(3,0,1))
         ha = 0
-#match, team, color, position, scoutername, event, gears, miss gears, high goals, miss high goal, lowgoal, capacity, pickupball, pickupgear, ahighgoal, alowgoal, agears, acrossed, climbed, notes
+#match, team, color, position, scoutername, event, gears, Aptgears, high goals, miss high goal, lowgoal, capacity, pickupball, pickupgear, ahighgoal, alowgoal, agears, acrossed, climbed, notes
         for row in sortedData:
             row7 = 'error'
             row9 = 'error'

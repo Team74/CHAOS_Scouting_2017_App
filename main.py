@@ -124,7 +124,7 @@ class Team:
             debug("heres data stuff: %s" % data)
 
     def putCData(self, c):
-        c.execute("SELECT * FROM `team` WHERE `team`=?", (self.number))
+        c.execute("SELECT * FROM `team` WHERE `team`=?", (self.number,))
         data = c.fetchone()
         if data:
             data = list(data)
@@ -253,10 +253,10 @@ class Screen(StackLayout):
         cl = dbl.cursor()
         found = True
 
-        cl.execute("SELECT * FROM `team` WHERE `team`=?", (team))
+        cl.execute("SELECT * FROM `team` WHERE `team`=?", (team,))
         found = cl.fetchone()
         if not found:
-            dbl.execute("INSERT INTO `team`(`team`) VALUES (?);", (team))
+            dbl.execute("INSERT INTO `team`(`team`) VALUES (?);", (team,))
             dbl.commit()
         else:
             self.team.putCData(cl)
@@ -608,7 +608,7 @@ class Screen(StackLayout):
             self.add_widget(widg)
 
     def save(self, obj=None):
-        debug("save function")
+        debug("-----save function-----")
         db = sqlite3.connect("rounddat.db") #connect to local db
         d = self.team.getAttr() #get information dict from self.team
         debug(d)
@@ -623,10 +623,11 @@ class Screen(StackLayout):
         db.commit()
         db.close()
         self.didSave = "Saved." #switch button text
+        debug("-----save function end-----")
         self.scrExit()
 
     def upload(self, obj=None):
-        debug("upload function")
+        debug("-----upload function-----")
         db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db") #connect to local db
@@ -634,12 +635,14 @@ class Screen(StackLayout):
         cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         fetchone = list(cl.fetchone())
         fetchoneList = fetchone
-
         debug("fetchone:     "+str(fetchone))
         debug("fetchoneList: "+str(fetchoneList))
-        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.round, self.team.number, self.team.event))
-        if not c.fetchone():
-            c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", (self.team.round, self.team.number, self.team.event))
+        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, self.team.event))
+        test = c.fetchone()
+        if not test:
+            c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", (self.team.number, self.team.round, self.team.event))
+        elif test:
+            debug("THERE SHOULD BE DATA HERE: " + str(test))
         c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
                   fetchoneList
                   )
@@ -651,7 +654,7 @@ class Screen(StackLayout):
                   (d['capacity'],d["pickupGears"],d["pickupBalls"],d['number'])
                   )
 
-        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[0], fetchone[1], fetchone[3]))
+        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[-3], fetchone[-2], fetchone[-1]))
         debug(c.fetchone())
         db.commit()
         c.close()
@@ -659,6 +662,7 @@ class Screen(StackLayout):
         cl.close()
         dbl.close()
         self.didUpload = "Uploaded."
+        debug("-----upload function end-----")
         self.scrExit()
 
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5

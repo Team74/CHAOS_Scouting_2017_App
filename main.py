@@ -21,6 +21,7 @@ def debug(msg):
     if DEBUG:
         print("[hol up] " + str(msg))
 
+#UI color settings
 Builder.load_string("""
 <cLabel>:
     canvas.before:
@@ -43,6 +44,8 @@ Builder.load_string("""
             pos: self.x - 1, self.y - 1
             size: self.width + 2, self.height + 2
 """)
+
+#Overwriting normal widget classes to make them pretty
 class cLabel(Label):
     def __init__(self, rgb=[0.5,0.5,0.5], **kwargs):
         self.rgb = rgb + [1]
@@ -55,27 +58,36 @@ class cButton(Button):
         self.rgb = editedRGB
         super(cButton, self).__init__(**kwargs)
 
+#ascii table setup:
+#                                       #
+#---------------------------------------#
+#- - - - - - - - - - - - - - - - - - - -#
+
 #the following functions are for decluttering the scr functions
-def smallButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cButton(text=txt, rgb=rgb, size_hint=(.115, height))
-def smallLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cLabel(text=txt, rgb=rgb, size_hint=(.115, height))
-
-def smallSideButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cButton(text=txt, rgb=rgb, size_hint=(.0775, height))
-def smallSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cLabel(text=txt, rgb=rgb, size_hint=(.0775, height))
-
-def largeButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cButton(text=txt, rgb=rgb, size_hint=(.23, height))
-def largeLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cLabel(text=txt, rgb=rgb, size_hint=(.23, height))
-
-def largeSideButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):
+#large button/label witdh div by 2                                  #---examples----------------------------#
+def smallButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):     #the add capacity to low goal buttons   #
+    return cButton(text=txt, rgb=rgb, size_hint=(.115, height))     #                                       #
+#no small label needed                                              #                                       #
+                                                                    #---------------------------------------#
+#large side button/label width div by 2                             #                                       #
+def smallSideButton(txt, rgb=[.5,.5,.5], height=.1666666666666667): #low goal add and subtract buttons      #
+    return cButton(text=txt, rgb=rgb, size_hint=(.0775, height))    #                                       #
+#no small side label needed                                         #                                       #
+                                                                    #---------------------------------------#
+#full size buttons and labels for the middle of the UI              #                                       #
+def largeButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):     #gear add and subtract buttons          #
+    return cButton(text=txt, rgb=rgb, size_hint=(.23, height))      #- - - - - - - - - - - - - - - - - - - -#
+def largeLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):      #gear label, climb label, capacity label#
+    return cLabel(text=txt, rgb=rgb, size_hint=(.23, height))       #                                       #
+                                                                    #---------------------------------------#
+                                                                    #
+#full size buttons and labels for the side of the UI
+def largeSideButton(txt, rgb=[.5,.5,.5], height=.1666666666666667): #
     return cButton(text=txt, rgb=rgb, size_hint=(.155, height))
 def largeSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
     return cLabel(text=txt, rgb=rgb, size_hint=(.155, height))
 
+#all buttons and labels in the auton screen
 def autonLabel(txt, rgb=[.5, .5, .5]):
     return cLabel(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
 def autonButton(txt, rgb=[.5, .5, .5]):

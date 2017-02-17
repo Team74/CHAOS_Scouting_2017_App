@@ -32,11 +32,11 @@ version = 0.1
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
-# version.filename = %(source.dir)s/main.py
+#version.filename = %(source.dir)s/main.py
 
 # (list) Application requirements
 # comma seperated e.g. requirements = kivy
-requirements = sqlite3,kivy,hostpython3,python3crystax,mysql_connector
+requirements = sqlite3,kivy,hostpython3,python3crystax,mysql_connector, plyer, android
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -72,7 +72,7 @@ orientation = landscape
 fullscreen = 1
 
 # (list) Permissions
-android.permissions = INTERNET
+android.permissions = INTERNET, CAMERA
 
 # (int) Android API to use
 android.api = 19

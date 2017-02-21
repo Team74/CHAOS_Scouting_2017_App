@@ -146,12 +146,13 @@ class Team:
         data = list(data)
         for i in range(len(data)):
             if data[i] == None: #shouldn't need to be done, but fixing up sqlite3 NULL so that its zero
-                debug("Nonetype failsafe is being run, this might be a problem")
+                debug("Sql nonetype failsafe is being run, this might be a problem")
                 data[i] = 0
         debug(str(len(data)))
         try: #getting all of the data out of the fetchone statement earlier
+            #next 3 lines are compressed to save space and for no other reason, it is safe to replace the semicolons with newlines
             self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
-            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
+            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
             self.prevnotes=data[18]; self.posfin=data[19]
         except:
             debug("whoops, putdata got an error")
@@ -749,6 +750,13 @@ class Screen(StackLayout):
 
     def uploadAll(self, obj=None): #uploads all data in the local database into the pi database
         debug("uploadAll()", "title")
+        try:
+            db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi
+        except:
+            debug("unable to connect to database, aborting upload")
+            self.didAupload = "Failed to connect to the database"
+            self.scrExit()
+            return
         dbl = sqlite3.connect("rounddat.db")
         cl = dbl.cursor()
         cl.execute("SELECT team, round, scouterName FROM `main`")
@@ -773,7 +781,13 @@ class Screen(StackLayout):
 
     def upload(self, obj=None): #uploads loaded data into the pi database
         debug("upload()", "title")
-        db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi
+        try:
+            db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi
+        except:
+            debug("unable to connect to database, aborting upload")
+            self.didUpload = "Failed to connect to the database"
+            self.scrExit()
+            return
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()

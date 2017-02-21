@@ -13,13 +13,26 @@ import sqlite3
 import mysql.connector
 
 import os
+import random
 
 #mysql pi ip: 10.111.49.41
 
 DEBUG = 1
-def debug(msg):
+def debug(msg, type="normal"):
     if DEBUG:
-        print("[hol up] " + str(msg))
+        msg = list(str(msg))
+        if type == "title":
+            for i in range(5):
+                msg.insert(0, "-")
+                msg.append("-")
+        if type == "header":
+            msg.insert(0, "-")
+            for i in range(2):
+                msg.insert(0, " ")
+        if type == "header 2":
+            msg.insert(0, "  ")
+        msg = "".join(msg)
+        print("[hol up ] [debug       ]" + msg)
 
 #UI color settings
 Builder.load_string("""
@@ -74,8 +87,7 @@ def smallLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
 def smallSideButton(txt, rgb=[.5,.5,.5], height=.1666666666666667): # low goal add and subtract buttons       #
     return cButton(text=txt, rgb=rgb, size_hint=(.0775, height))    #-----------------------------------------#
 def smallSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cLabel(text=txt, rgb=rgb, size_hint=(.0775, height))
-#no small side label needed                                         #                                         #
+    return cLabel(text=txt, rgb=rgb, size_hint=(.0775, height))     #                                         #
                                                                     #                                         #
 #full size buttons and labels for the middle of the UI              #-----------------------------------------#
 def largeButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):     # gear add and subtract buttons           #
@@ -92,7 +104,7 @@ def largeSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):  # high/low g
 #all buttons and labels in the auton screen
 def autonLabel(txt, rgb=[.5, .5, .5]):
     return cLabel(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
-def autonButton(txt, rgb=[.5, .5, .5]):
+def autonButton(txt, rgb=[.5,.5,.5]):
     return cButton(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
 
 class Team:
@@ -124,24 +136,30 @@ class Team:
         self.color = True #True if blue, False if red
 
     def getAttr(self): #used in saving and uploading, dumps all vars
+        debug("getAttr()", "header 2")
         return vars(self)
+        debug("getAttr() end", "header 2")
 
-    def putData(self, c): #puts the data from the local database into the object
-        c.execute("SELECT * FROM `main` WHERE `team`=? AND `round`=? AND `event`=?", (self.number, self.round, self.event))
-        data = list(c.fetchone())
+    def putData(self, data): #puts the data from the local database into the object
+        debug("putData()", "header")
+        debug(data)
+        data = list(data)
         for i in range(len(data)):
             if data[i] == None: #shouldn't need to be done, but fixing up sqlite3 NULL so that its zero
+                debug("Nonetype failsafe is being run, this might be a problem")
                 data[i] = 0
         debug(str(len(data)))
         try: #getting all of the data out of the fetchone statement earlier
             self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
-            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.aGears=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
+            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
             self.prevnotes=data[18]; self.posfin=data[19]
         except:
             debug("whoops, putdata got an error")
             debug("heres data stuff: %s" % data)
+        debug("end putData()", "header")
 
     def putCData(self, c): #puts all the constant data from the local database into the object
+        debug("putCData()", "header")
         c.execute("SELECT * FROM `team` WHERE `team`=?", (self.number,))
         data = c.fetchone()
         if data:
@@ -155,6 +173,7 @@ class Team:
             self.capacity=data[1]; self.pickupBalls=data[2]; self.pickupGears=data[3]; debug(data[1])
         except:
             debug('ok')
+        debug("putCData() end", "header")
 
 #main class, overwrites stacklayout layout from kivy
 class Screen(StackLayout):
@@ -165,6 +184,7 @@ class Screen(StackLayout):
         self.choose()
 
     def makeDB(self, db): #makes the database framework if it doesn't exist
+        debug("makeDB()", "header")
         db.execute('''CREATE TABLE IF NOT EXISTS `main`(
                                                         `round` INTEGER NOT NULL,
                                                         `team` INTEGER NOT NULL,
@@ -188,15 +208,17 @@ class Screen(StackLayout):
                                                         `position` INTEGER,
                                                         PRIMARY KEY(`team`,`round`))''')
         db.execute("CREATE TABLE IF NOT EXISTS `lastscouter` (`name` TEXT)")
-        debug("makeDB was called")
         db.execute('''CREATE TABLE IF NOT EXISTS `team`(
                                                         `team`INTEGER NOT NULL,
                                                         `capacity` INTEGER,
                                                         `pickupBalls` INTEGER,
                                                         `pickupGears` INTEGER,
                                                         PRIMARY KEY(`team`))''')
+        db.execute("CREATE TABLE IF NOT EXISTS `events` (`currentEvent`)")
+        debug("makeDB() end", "header")
 
     def getlastscouter(self, default=''): #returns last scouter it remembers
+        debug("getLastScouter()", "header")
         #opening up the database
         db = sqlite3.connect('rounddat.db')
         self.makeDB(db)
@@ -210,9 +232,11 @@ class Screen(StackLayout):
             return default
         else:
             return row[0]
+        debug("getLastScouter() end", "header")
 
     def setlastscouter(self, name): #puts last scouter into memory
-        print(name)
+        debug("setlastscouter()", "header")
+        debug(name)
         if self.getlastscouter(None) == None:
             scouterexist = False
         else:
@@ -224,9 +248,10 @@ class Screen(StackLayout):
             db.execute("INSERT INTO `lastscouter`(`name`) VALUES (?);", (name,))
         db.commit()
         db.close()
+        debug("setlastscouter() end", "header")
 
     def choose(self, hint="", obj=None): #scr to choose team, round and scouter
-        debug("choose was called")
+        debug("choose()", "title")
         self.clear_widgets()
         displist = list()
         #                      setting up color                    setting up text            setting up size
@@ -248,31 +273,61 @@ class Screen(StackLayout):
 
         for widg in displist:
             self.add_widget(widg)
+        debug("choose() end", "title")
+
+    def failSetTeam(self):
+        debug("failSetTeam()", "header 2")
+        debug("unable to setTeam, number %s, round %s" % (self.teamsel.text, self.roundsel.text))
+        debug("failSetTeam() end", "header 2")
+        self.choose(hint="Enter a number value.")
 
     def pressGo(self, obj): #called to set things up before heading to main scr
+        debug("pressGo()", "title")
         numbers = "1234567890"
-        if not self.teamsel.text in numbers and not self.roundsel.text in numbers: #long if statement to test if the user entered numbers
-            debug("unable to setTeam, number %s, round %s" % (self.teamsel.text, self.roundsel.text))
-            self.choose(hint="Enter a number value.")
-        else:
-            self.setTeam(self.teamsel.text, self.roundsel.text, self.name.text)
-            self.setlastscouter(self.name.text)
+        debug(numbers)
+        debug(self.teamsel.text)
+        debug(self.roundsel.text)
+        if not self.teamsel.text or not self.roundsel.text:
+            self.failSetTeam()
+            return
+        for i in self.teamsel.text:
+            if not i in numbers:
+                self.failSetTeam()
+                return
+        for i in self.roundsel.text:
+            if not i in numbers:
+                self.failSetTeam()
+                return
+        self.setTeam(self.teamsel.text, self.roundsel.text, self.name.text)
+        self.setlastscouter(self.name.text)
+        debug("pressGo() end", "title")
 
     def setTeam(self, team, round, name): #gets the team name from the shared database in the raspberry pi
+        debug("setTeam()", "title")
         #unpack info sent by pressGo method
         self.team = Team(team)
         self.team.round = round #it renamed a method but it still works don't question it
         self.team.scouterName = name
-        db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi database
+
+        dbl = sqlite3.connect("rounddat.db") #connect to local database
+        cl = dbl.cursor()
+
+        cl.execute("CREATE TABLE IF NOT EXISTS `currentEvent` (`events` INTEGER)")
+        try:
+            db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi database
+            dbtype = "mysql"
+        except:
+            db = sqlite3.connect('rounddat.db')
+            dbtype = "sqlite"
+
+        debug("db is a %s connection" % dbtype)
         c = db.cursor()
         c.execute("SELECT `currentEvent` FROM `events`")
         self.team.event = c.fetchone()[0]
         debug(self.team.event)
+        if dbtype == "mysql":
+            cl.execute("INSERT INTO `events`(`currentEvent`) VALUES (?)", (self.team.event))
         self.team.prevnotes = "" #reinitialize notes??? may need to be removed
-
-
-        dbl = sqlite3.connect("rounddat.db") #connect to local database
-        cl = dbl.cursor()
 
         cl.execute("SELECT * FROM `team` WHERE `team`=?", (team,))
         found = cl.fetchone() #returns None if there is no data
@@ -285,7 +340,9 @@ class Screen(StackLayout):
         try: #little bit more complex, has to remake the database if not found
             cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=?", (round, team)) #this will error if the main table isnt there
             found = cl.fetchone()
+
         except:
+            debug("had to remake db")
             self.makeDB()
             found = False
             pass
@@ -294,7 +351,7 @@ class Screen(StackLayout):
             dbl.execute("UPDATE `main` SET `scouterName`=? WHERE `round`=? AND `team`=? AND `event`=?", (name, round, team, self.team.event))
             dbl.commit()
         else:
-            self.team.putData(cl)
+            self.team.putData(found)
         debug(self.team.color)
 
         #grabbing team's color and making the color correct
@@ -321,9 +378,8 @@ class Screen(StackLayout):
         else:
             self.team.tog = '1'
             self.team.togcolor = [(235/255), (61/255), (255/255)]
-        debug('-----pos color-----')
+        debug("pos color", "header 2")
         debug(self.team.posfin)
-        debug('-----end pos color-----')
 
         if self.team.gfin == 1:
             self.team.g = 'never apt the gear'
@@ -343,52 +399,62 @@ class Screen(StackLayout):
         cl.close()
         db.close()
         dbl.close()
+        debug("setTeam() end", "title")
         self.scrMain()
 
     #the following functions are called by the buttons on the interface when pressed
     def addLow(self, count, widg): #add to low goals scored
+        debug("addLow()")
         self.reloadList = [widg]
         self.team.lowgoal += count
         if self.team.lowgoal <= 0:
             self.team.lowgoal = 0
         widg.text = str(self.team.lowgoal)
     def addHigh(self, count, widg): #add to high goals scored
+        debug("addHigh()")
         self.reloadList = [widg]
         self.team.highgoal += count
         if self.team.highgoal <= 0:
             self.team.highgoal = 0
         widg.text = str(self.team.highgoal)
     def addMissHigh(self, count, widg): #add to missed high goals
+        debug("addMissHigh()")
         self.reloadList = [widg]
         self.team.MissHighGoal += count
         if self.team.MissHighGoal <= 0:
             self.team.MissHighGoal = 0
         widg.text = str(self.team.MissHighGoal)
     def addGear(self, count, widg): #add to gears scored
+        debug("addGear()")
         self.reloadList = [widg]
         self.team.gears += count
         if self.team.gears <= 0:
             self.team.gears = 0
         widg.text = str(self.team.gears)
     def addAptGear(self, count, widg): #add to attempted gears
+        debug("addAptGear")
         self.reloadList = [widg]
         self.team.AptGears += count
         if self.team.AptGears <= 0:
             self.team.AptGears = 0
         widg.text = str(self.team.AptGears)
     def canPickGear(self, widg, obj=None): #toggle the ability to pick up gears
+        debug("canPickGear()")
         self.reloadList = [widg]
         self.team.pickupGears = int(not self.team.pickupGears)
         widg.text = "The robot %s pickup gears off of the ground." % ("CAN" if self.team.pickupGears else "CAN'T")
     def canPickBall(self, widg, obj=None): #toggle the ability to pick balls off ground
+        debug("canPickBall")
         self.reloadList = [widg]
         self.team.pickupBalls = int(not self.team.pickupBalls)
         widg.text = "The robot %s pickup balls off of the ground." % ("CAN" if self.team.pickupBalls else "CAN'T")
     def climbed(self, widg, obj=None): #toggle whether or not the team climbed
+        debug("climbed()")
         self.reloadList = [widg]
         self.team.climb = int(not self.team.climb)
         widg.text = "yes" if self.team.climb else "no"
     def color(self, widg, obj=None): #toggle the team color (red, blue)
+        debug("color")
         self.reloadList = [widg]
         self.team.color = int(not self.team.color)
         debug('color run')
@@ -398,12 +464,14 @@ class Screen(StackLayout):
             self.buttoncolor =[(200/255), 0, 0]
         self.scrMain()
     def aAddLow(self, count, widg): #add to auton low goal count
+        debug("aAddLow")
         self.reloadList = [widg]
         self.team.aLowgoal += count
         if self.team.aLowgoal <= 0:
             self.team.aLowgoal = 0
         widg.text = str(self.team.aLowgoal)
     def aAddHigh(self, count, widg): #add to auton high coal count
+        debug("aAddHigh()")
         self.reloadList = [widg]
         self.team.aHighgoal += count
         if self.team.aHighgoal <= 0:
@@ -430,16 +498,19 @@ class Screen(StackLayout):
 
         self.scrAuton()
     def aToggleCross(self, widg, obj=None): #toggle if team crossed base line in auton
+        debug("aToggleCross")
         self.reloadList = [widg]
         self.team.aCrossed = int(not self.team.aCrossed)
         widg.text = "The team %s cross the ready line."%("DID"if self.team.aCrossed else"DIDN'T")
     def checkpos(self, widg): #toggle team's position
+        debug("checkpos")
         self.reloadList = [widg]
         self.team.posfin = self.team.posfin + 1
         debug(self.team.posfin)
         if self.team.posfin >= 3:
             self.team.posfin = self.team.posfin - 3
         if self.team.posfin == 1:
+
             self.team.tog = '2'
             self.team.togcolor = [(117/255), (117/255), (117/255)]
         elif self.team.posfin == 2:
@@ -452,12 +523,13 @@ class Screen(StackLayout):
 
     #main functions (displays)
     def scrMain(self, obj=None, reload=False): #teleop scr
+        debug("scrMain()", "title")
         displist = list()
         self.camefrom = "tele" #used to route the cancel button on the areyousure scr
         #reset menu button text
         self.didSave = "Save"
         self.didUpload = "               Upload \n (Save before uploading)"
-        self.didAupload = "Upload"
+        self.didUploadAll = "Upload all"
 
             #line 1
         lowLbl =       largeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
@@ -477,7 +549,7 @@ class Screen(StackLayout):
 
             #line 3
         incLow1 =      smallSideButton("-1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(-1, lowDisp)); displist.append(incLow1)
-        incLow5 =      smallSideButton("-5", rgb=[(14/255),(201/255),(170/255)]); incLow5.bind(on_release=lambda x: self.addLow(-5, lowDisp)); displist.append(incLow5)
+        incLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(incLow3)
         capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
         toggleAuton =  largeButton("Auton", rgb=[(201/255),(170/255),(28/255)]); toggleAuton.bind(on_release=self.scrAuton); displist.append(toggleAuton)
         toggleCapab =  largeButton("Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
@@ -485,8 +557,8 @@ class Screen(StackLayout):
         decMissHigh =  smallSideButton("-1", rgb=[(120/255),(201/255),(40/255)]); decMissHigh.bind(on_release=lambda x: self.addMissHigh(-1, MissHighDisp)); displist.append(decMissHigh)
 
             #line 4
-        incLow10 =     smallSideButton("-10", rgb=[(14/255),(201/255),(170/255)]); incLow10.bind(on_release=lambda x: self.addLow(-10, lowDisp)); displist.append(incLow10)
-        incLow20 =     smallSideButton("-20", rgb=[(14/255),(201/255),(170/255)]); incLow20.bind(on_release=lambda x: self.addLow(-20, lowDisp)); displist.append(incLow20)
+        incLow9 =     smallSideButton("-9", rgb=[(14/255),(201/255),(170/255)]); incLow9.bind(on_release=lambda x: self.addLow(-9, lowDisp)); displist.append(incLow9)
+        incLow15 =     smallSideButton("-15", rgb=[(14/255),(201/255),(170/255)]); incLow15.bind(on_release=lambda x: self.addLow(-15, lowDisp)); displist.append(incLow15)
         capDispAdd =   smallButton("+" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispAdd.bind(on_release=lambda x: self.addLow(self.team.capacity, lowDisp)); displist.append(capDispAdd)
         capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
         toggleTeam =   largeButton("Team", rgb=[(201/255),(170/255),(28/255)]); toggleTeam.bind(on_release=self.areYouSure); displist.append(toggleTeam)
@@ -519,8 +591,10 @@ class Screen(StackLayout):
         self.clear_widgets()
         for widg in displist:
             self.add_widget(widg)
+        debug("scrMain() end", "title")
 
     def scrExit(self, obj=None): #menu scr
+        debug("scrExit()", "title")
         displist = list()
         self.camefrom = "exit"
         #row 1
@@ -528,7 +602,7 @@ class Screen(StackLayout):
         #row 2
         saveExit = Button(text=self.didSave, size_hint=(.25,.8)); saveExit.bind(on_release=self.save); displist.append(saveExit)
         upload = Button(text=self.didUpload, size_hint=(.25,.8)); upload.bind(on_release=self.upload); displist.append(upload)
-        Aupload = Button(text=self.didAupload, size_hint=(.25,.8)); Aupload.bind(on_release=self.Aupload); displist.append(Aupload)
+        uploadAll = Button(text=self.didUploadAll, size_hint=(.25,.8)); uploadAll.bind(on_release=self.uploadAll); displist.append(uploadAll)
         Team = Button(text="Team", size_hint=(.25,.8)); Team.bind(on_release=lambda x: self.areYouSure("tele")); displist.append(Team)
         #row 3
         exit =     Button(text="Exit", size_hint=(1, .1)); exit.bind(on_release=lambda x: self.areYouSure("exit")); displist.append(exit)
@@ -536,8 +610,10 @@ class Screen(StackLayout):
         self.clear_widgets()
         for widg in displist:
             self.add_widget(widg)
+        debug("scrExit() end", "title")
 
     def scrCapab(self, obj=None, cap=None, reload=False): #cabapilities scr
+        debug("scrCapab()", "title")
         displist = list()
         capChangeText = ""
         if not cap == None:
@@ -562,30 +638,35 @@ class Screen(StackLayout):
         self.clear_widgets()
         for widg in displist:
             self.add_widget(widg)
+        debug("scrCapab() end", "title")
 
     def savednotes(self, notesfield): #saving notes
+        debug("savednotes()", "title")
         self.team.prevnotes = notesfield.text
-        debug('-----notes-----')
         debug(self.team.prevnotes)
         debug(notesfield.text)
+        debug("savednotes() end", "title")
         self.scrMain()
 
     def scrnotes(self, obj=None, cap=None): #notes scr
+        debug("scrnotes()", "title")
         self.clear_widgets()
         displist = list()
-        notesText = self.team.prevnotes #puts original notes back in
+        notesText = str(self.team.prevnotes) #puts original notes back in
 
         #row 1
         cancel = cButton(text="Cancel", size_hint=(1, .1)); cancel.bind(on_release=self.scrMain if self.camefrom == "tele" else self.scrAuton); displist.append(cancel)
         #row 2
-        notes = TextInput(text=self.team.prevnotes, multiline=True, size_hint=(1, .8)); notes.bind(on_text_validate=lambda x: self.scrnotes); displist.append(notes)
+        notes = TextInput(text=str(self.team.prevnotes), multiline=True, size_hint=(1, .8)); notes.bind(on_text_validate=lambda x: self.scrnotes); displist.append(notes)
         #row 3
         save = cButton(text="Save", size_hint=(1, .1)); save.bind(on_release=lambda x: self.savednotes(notes)); displist.append(save)
 
         for widg in displist:
             self.add_widget(widg)
+        debug("scrnotes() end", "title")
 
     def scrAuton(self, obj=None, reload=False): #autonomous scr
+        debug("scrAuton()", "title")
         displist = list()
         self.reloadlist = list()
         self.camefrom = "auton"
@@ -618,8 +699,10 @@ class Screen(StackLayout):
         self.clear_widgets()
         for widg in displist:
             self.add_widget(widg)
+        debug("scrAuton() end", "title")
 
     def areYouSure(self, camefrom=None, obj=None): #prompt for leaving saved data
+        debug("areYouSure()", "title")
         self.clear_widgets()
         displist = list()
         if not camefrom == None:
@@ -643,14 +726,15 @@ class Screen(StackLayout):
 
         for widg in displist:
             self.add_widget(widg)
+        debug("areYouSure() end", "title")
 
     def save(self, obj=None):
-        debug("-----save function-----")
+        debug("save()", "title")
         db = sqlite3.connect("rounddat.db") #connect to local db
         d = self.team.getAttr() #get information dict from self.team
         debug(d)
         db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
-                   (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["aGears"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
+                   (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    ) #sql wizardry, simply takes out all of the stuff stored in d (data) and puts it in its respective places
         db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number)) #updating the constants storage table
@@ -660,9 +744,11 @@ class Screen(StackLayout):
         db.commit()
         db.close()
         self.didSave = "Saved." #switch button text
-        debug("-----save function end-----")
+        debug("save() end", "title")
         self.scrExit()
-    def Aupload(self, obj=None): #uploads all data in the local database into the pi database
+
+    def uploadAll(self, obj=None): #uploads all data in the local database into the pi database
+        debug("uploadAll()", "title")
         dbl = sqlite3.connect("rounddat.db")
         cl = dbl.cursor()
         cl.execute("SELECT team, round, scouterName FROM `main`")
@@ -671,12 +757,22 @@ class Screen(StackLayout):
             debug(fetchone[1])
             self.setTeam(fetchone[0], fetchone[1], fetchone[2])
             self.upload()
-        self.didAupload = "Uploaded."
+        self.didUploadAll = "Uploaded."
         cl.close()
         dbl.close()
+        debug("uploadAll() end", "title")
+
+    def download(self, obj=None): #TODO: implement
+        debug("download()", "title")
+        db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat")
+        c = db.cursor()
+        dbl = sqlite3.connect("rounddat.db")
+        cl = dbl.cursor()
+        c.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        data = c.fetchone()
 
     def upload(self, obj=None): #uploads loaded data into the pi database
-        debug("-----upload function-----")
+        debug("upload()", "title")
         db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db") #connect to local db
@@ -684,12 +780,14 @@ class Screen(StackLayout):
         cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         fetchoneList = list(cl.fetchone()) #grabbing all data from that giant sql statement above
         debug("fetchoneList: "+str(fetchoneList))
+
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, self.team.event))
         test = c.fetchone()
         if not test: #setting up pi database to take the data
             c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", (self.team.number, self.team.round, self.team.event))
         elif test: #if the pi database is already set to take the data
             debug("THERE SHOULD BE DATA HERE: " + str(test))
+
         c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
                   fetchoneList
                   ) #send the pi the data
@@ -701,7 +799,7 @@ class Screen(StackLayout):
                   (d['capacity'],d["pickupGears"],d["pickupBalls"],d['number'])
                   ) #set the constants for the team
 
-        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchone[-3], fetchone[-2], fetchone[-1])) #test to see if data actually got there
+        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchoneList[-3], fetchoneList[-2], fetchoneList[-1])) #test to see if data actually got there
         debug(c.fetchone())
         db.commit()
         c.close()
@@ -709,7 +807,7 @@ class Screen(StackLayout):
         cl.close()
         dbl.close()
         self.didUpload = "Uploaded."
-        debug("-----upload function end-----")
+        debug("upload() end")
         self.scrExit()
 
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5

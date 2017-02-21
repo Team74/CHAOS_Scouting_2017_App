@@ -327,7 +327,8 @@ class Screen(StackLayout):
         self.team.event = c.fetchone()[0]
         debug(self.team.event)
         if dbtype == "mysql":
-            cl.execute("INSERT INTO `events`(`currentEvent`) VALUES (?)", (self.team.event))
+            debug("putting events into local DB")
+            cl.execute("INSERT INTO `events`(`currentEvent`) VALUES (?)", (self.team.event,))
         self.team.prevnotes = "" #reinitialize notes??? may need to be removed
 
         cl.execute("SELECT * FROM `team` WHERE `team`=?", (team,))
@@ -823,6 +824,9 @@ class Screen(StackLayout):
         self.didUpload = "Uploaded."
         debug("upload() end")
         self.scrExit()
+
+    def compatTableau(self, c):
+        pass
 
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
 #sea foam green: , rgb=[(14/255),(201/255),(170/255)] :  low goal

@@ -116,7 +116,10 @@ class Team:
         #auton
         self.aHighgoal = 0
         self.aLowgoal = 0
-        self.aGears = 0
+        self.gfin = 1
+        self.g = 'never apt the gear'
+        self.gfing = 'never apt the gear'
+        self.gcolor = [(117/255), (117/255), (117/255)]
         self.aCrossed = 0 #crossed the base line
         self.color = True #True if blue, False if red
 
@@ -310,17 +313,30 @@ class Screen(StackLayout):
             self.buttoncolor =[0, 0,(200/255)]
         #grabbing team's position and correcting color
         if self.team.posfin == 1:
-            self.team.tog = 'boiler'
+            self.team.tog = '2'
             self.team.togcolor = [(117/255), (117/255), (117/255)]
         elif self.team.posfin == 2:
-            self.team.tog = 'middle'
+            self.team.tog = '3'
             self.team.togcolor = [0, (255/255), (42/255)]
         else:
-            self.team.tog = 'far'
+            self.team.tog = '1'
             self.team.togcolor = [(235/255), (61/255), (255/255)]
         debug('-----pos color-----')
         debug(self.team.posfin)
         debug('-----end pos color-----')
+
+        if self.team.gfin == 1:
+            self.team.g = 'never apt the gear'
+            self.team.gcolor = [(117/255), (117/255), (117/255)]
+            self.team.gfing = 'made the gears'
+        elif self.team.gfin == 2:
+            self.team.g = 'made the gear'
+            self.team.gcolor = [0, (255/255), (42/255)]
+            self.team.gfing = 'missed the gears'
+        else:
+            self.team.g = 'missed the gear'
+            self.team.gcolor = [(235/255), (61/255), (255/255)]
+            self.team.gfing = 'never apt the gear'
 
         debug(self.team.color)
         c.close()
@@ -393,10 +409,26 @@ class Screen(StackLayout):
         if self.team.aHighgoal <= 0:
             self.team.aHighgoal = 0
         widg.text = str(self.team.aHighgoal)
-    def aAddGear(self, widg, obj=None): #toggle if team used gear in auton
+    def checkg(self, widg, obj=None): #toggle if team used gear in auton
         self.reloadList = [widg]
-        self.team.aGears = int(not self.team.aGears)
-        widg.text = "The team %s use their gear."%("DID"if self.team.aGears else"DIDN'T")
+        self.team.gfin = self.team.gfin + 1
+        debug(self.team.gfing)
+        if self.team.gfin >= 3:
+            self.team.gfin = self.team.gfin - 3
+        if self.team.gfin == 1:
+            self.team.g = 'never apt the gear'
+            self.team.gcolor = [(117/255), (117/255), (117/255)]
+            self.team.gfing = 'made the gears'
+        elif self.team.gfin == 2:
+            self.team.g = 'made the gear'
+            self.team.gcolor = [0, (255/255), (42/255)]
+            self.team.gfing = 'missed the gears'
+        else:
+            self.team.g = 'missed the gear'
+            self.team.gcolor = [(235/255), (61/255), (255/255)]
+            self.team.gfing ='never apt the gear'
+
+        self.scrAuton()
     def aToggleCross(self, widg, obj=None): #toggle if team crossed base line in auton
         self.reloadList = [widg]
         self.team.aCrossed = int(not self.team.aCrossed)
@@ -408,13 +440,13 @@ class Screen(StackLayout):
         if self.team.posfin >= 3:
             self.team.posfin = self.team.posfin - 3
         if self.team.posfin == 1:
-            self.team.tog = 'boiler'
+            self.team.tog = '2'
             self.team.togcolor = [(117/255), (117/255), (117/255)]
         elif self.team.posfin == 2:
-            self.team.tog = 'middle'
+            self.team.tog = '3'
             self.team.togcolor = [0, (255/255), (42/255)]
         else:
-            self.team.tog = 'far'
+            self.team.tog = '1'
             self.team.togcolor = [(235/255), (61/255), (255/255)]
         self.scrMain()
 
@@ -576,7 +608,7 @@ class Screen(StackLayout):
         high3 =       autonButton(txt="+3", rgb=[(28/255),(201/255),(40/255)]); high3.bind(on_release=lambda x: self.aAddHigh(3, highDisp)); displist.append(high3)
         #row 5
         lowm1 =   autonButton(txt="-1", rgb=[(14/255),(201/255),(170/255)]); lowm1.bind(on_release=lambda x: self.aAddLow(-1, lowDisp)); displist.append(lowm1)
-        gearBtn = autonButton(txt="The team %s use their gear."%("DID"if self.team.aGears else"DIDN'T"),rgb=[(28/255),(129/255),(201/255)]);gearBtn.bind(on_release=self.aAddGear);displist.append(gearBtn)
+        checkg =  autonButton(self.team.g, self.team.gcolor); checkg.bind(on_release=lambda x: self.checkg(checkg)); displist.append(checkg)
         highm1 =  autonButton(txt="-1", rgb=[(28/255),(201/255),(40/255)]); highm1.bind(on_release=lambda x: self.aAddHigh(-1, highDisp)); displist.append(highm1)
         #row 6
         lowm5 =  autonButton(txt="-5", rgb=[(14/255),(201/255),(170/255)]); lowm5.bind(on_release=lambda x: self.aAddLow(-5, lowDisp)); displist.append(lowm5)

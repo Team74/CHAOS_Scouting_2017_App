@@ -552,7 +552,7 @@ class Screen(StackLayout):
 
             #line 6
         decLow10 =     smallSideButton("9", rgb=[(14/255),(201/255),(170/255)]); decLow10.bind(on_release=lambda x: self.addLow(10, lowDisp)); displist.append(decLow10)
-        decLow20 =     smallSideButton("20", rgb=[(14/255),(201/255),(170/255)]); decLow20.bind(on_release=lambda x: self.addLow(20, lowDisp)); displist.append(decLow20)
+        decLow20 =     smallSideButton("15", rgb=[(14/255),(201/255),(170/255)]); decLow20.bind(on_release=lambda x: self.addLow(20, lowDisp)); displist.append(decLow20)
         checkClimb =   largeButton("yes" if self.team.climb else "no", rgb=[(201/255),(28/255),(147/255)]); checkClimb.bind(on_release=lambda x: self.climbed(checkClimb)); displist.append(checkClimb)
         addGear =      smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addGear.bind(on_release=lambda x: self.addGear(1, gearDisp)); displist.append(addGear)
         decGear =      smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decGear.bind(on_release=lambda x: self.addGear(-1, gearDisp)); displist.append(decGear)
@@ -761,7 +761,7 @@ class Screen(StackLayout):
             self.scrExit()
             return
         c = db.cursor()
-        self.compatTableau(c)
+        #self.compatTableau(c)
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()
         cl.execute("SELECT * FROM `main`")
@@ -827,12 +827,19 @@ class Screen(StackLayout):
             c.execute("INSERT INTO `tableau`(`team`, `round`, `event`) VALUES (%s,%s,%s);", (self.team.number, self.team.round, self.team.event))
         debug(self.team.event)
         d = self.team.getAttr()
-        c.execute("UPDATE `tableau` SET `phase`=%s, `action`=%s, `successes`=%s, `misses`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
-                  ("teleop", "highgoal", d["highgoal"], d["MissHighGoal"], d["number"], d["round"], d["event"])
+        c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
+                  (d["number"], d["round"], d["event"], "teleop", "highgoal", d["highgoal"], d["MissHighGoal"])
                   )
-        c.execute("UPDATE `tableau` SET `phase`=%s, `action`=%s, `successes`=%s, `misses`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
-                  ("teleop", "gears", d["gears"], d["AptGears"]-d["gears"], d["number"], d["round"], d["event"])
+        c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
+                  (d["number"], d["round"], d["event"], "teleop", "lowgoal", d["lowgoal"], 0)
                   )
+        c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
+                  (d["number"], d["round"], d["event"], "teleop", "gears", d["gears"], d["AptGears"]-d["gears"])
+                  )
+        c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
+                  (d["number"], d["round"], d["event"], "teleop", "climbed", 1 if d["climbed"] else 0, 0 if d["climbed"] else 1)
+                  )
+
 
         #copy paste these when adding values
         debug("compatTableau end", "title")

@@ -845,26 +845,8 @@ class Screen(StackLayout):
         #self.compatTableau(c)
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()
-#<<<<<<< HEAD
         cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         fetchoneList = list(cl.fetchone()) #grabbing all data from that giant sql statement above
-'''=======
-        cl.execute("SELECT * FROM `main`")
-        fetchall = cl.fetchall()
-        fetchone = None
-        for tup in fetchall: #workaround for a bug i was getting on the commented line below
-            debug("Target round: %s, number: %s, event: %s" % (self.team.round, self.team.number, self.team.event))
-            debug("Actual round: %s, number: %s, event: %s" % (tup[0], tup[1], tup[3]))
-            if tup[0] == self.team.round and tup[1] == self.team.number and tup[3] == self.team.event:
-                debug("whoag they match, breaking")
-                fetchone = tup
-                break
-        cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
-        if not fetchone:
-            fetchone = cl.fetchone()
-        debug(fetchone)
-        fetchoneList = list(fetchone) #IF THIS ERRORS THE PROGRAM COULD NOT FIND THE CORRECT DATA TO UPLOAD
->>>>>>> 12c6c27fa13345a44edd83abc195d0fcfe3d2d28'''
         debug("fetchoneList: "+str(fetchoneList))
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, self.team.event))
@@ -883,7 +865,7 @@ class Screen(StackLayout):
             c.execute("INSERT INTO `team`(`team`) VALUES (%s);", (self.team.number,)) #make it if it doesn't exist
         c.execute("UPDATE `team` SET `capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s WHERE `team`=%s",
                   (d['capacity'],d["pickupGears"],d["pickupBalls"],d['number'])
-                  ) #set the constants for the team
+                  ) #set the constants for the team'''
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchoneList[-3], fetchoneList[-2], fetchoneList[-1])) #test to see if data actually got there
         debug(c.fetchone())

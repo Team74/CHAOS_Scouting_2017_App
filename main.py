@@ -150,6 +150,7 @@ class Team:
 
     def getAttr(self): #used in saving and uploading, dumps all vars
         debug("getAttr()", "header 2")
+        debug(vars(self))
         return vars(self)
         debug("getAttr() end", "header 2")
 
@@ -164,9 +165,11 @@ class Team:
         debug(str(len(data)))
         try: #getting all of the data out of the fetchone statement earlier
             #next 3 lines are compressed to save space and for no other reason, it is safe to replace the semicolons with newlines
+
             self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
             self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
             self.prevnotes=data[18]; self.posfin=data[19]; self.Foul=data[20]; self.TFoul=data[21]
+
         except:
             debug("whoops, putdata got an error")
             debug("heres data stuff: %s" % data)
@@ -364,7 +367,9 @@ class Screen(StackLayout):
             found = False
             pass
         if not found:
+            debug("putting data into main...")
             dbl.execute("INSERT INTO `main`(`round`,`team`,`scouterName`,`event`) VALUES (?,?,?,?);", (round, team, name, self.team.event))
+            debug("round: %s, team: %s, scouter: %s, event: %s", (round, team, name, self.team.event))
             dbl.execute("UPDATE `main` SET `scouterName`=? WHERE `round`=? AND `team`=? AND `event`=?", (name, round, team, self.team.event))
             dbl.commit()
         else:
@@ -614,6 +619,7 @@ class Screen(StackLayout):
 
             #line 6
         decLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); decLow1.bind(on_release=lambda x: self.addLow(1, lowDisp)); displist.append(decLow1)
+
         decLow5 =      smallSideButton("5", rgb=[(14/255),(201/255),(170/255)]); decLow5.bind(on_release=lambda x: self.addLow(5, lowDisp)); displist.append(decLow5)
         capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
         gearLbl =      smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
@@ -622,6 +628,7 @@ class Screen(StackLayout):
         AptGearDisp =  smallLabel(str(self.team.AptGears), rgb=[(28/255),0,(201/255)]); displist.append(AptGearDisp)
         addHigh2 =     smallSideButton("+1", rgb=[(28/255),(201/255),(40/255)]); addHigh2.bind(on_release=lambda x: self.addHigh(1, highDisp)); displist.append(addHigh2)
         addMissHigh2 = smallSideButton("+1", rgb=[(120/255),(201/255),(40/255)]); addMissHigh2.bind(on_release=lambda x: self.addMissHigh(1, MissHighDisp)); displist.append(addMissHigh2)
+
 
             #line 7
         decLow10 =     smallSideButton("10", rgb=[(14/255),(201/255),(170/255)]); decLow10.bind(on_release=lambda x: self.addLow(10, lowDisp)); displist.append(decLow10)
@@ -835,10 +842,29 @@ class Screen(StackLayout):
             self.scrExit()
             return
         c = db.cursor()
+        #self.compatTableau(c)
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()
+#<<<<<<< HEAD
         cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         fetchoneList = list(cl.fetchone()) #grabbing all data from that giant sql statement above
+'''=======
+        cl.execute("SELECT * FROM `main`")
+        fetchall = cl.fetchall()
+        fetchone = None
+        for tup in fetchall: #workaround for a bug i was getting on the commented line below
+            debug("Target round: %s, number: %s, event: %s" % (self.team.round, self.team.number, self.team.event))
+            debug("Actual round: %s, number: %s, event: %s" % (tup[0], tup[1], tup[3]))
+            if tup[0] == self.team.round and tup[1] == self.team.number and tup[3] == self.team.event:
+                debug("whoag they match, breaking")
+                fetchone = tup
+                break
+        cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        if not fetchone:
+            fetchone = cl.fetchone()
+        debug(fetchone)
+        fetchoneList = list(fetchone) #IF THIS ERRORS THE PROGRAM COULD NOT FIND THE CORRECT DATA TO UPLOAD
+>>>>>>> 12c6c27fa13345a44edd83abc195d0fcfe3d2d28'''
         debug("fetchoneList: "+str(fetchoneList))
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, self.team.event))
@@ -871,7 +897,40 @@ class Screen(StackLayout):
         self.scrExit()
 
     def compatTableau(self, c):
-        pass
+        debug("compatTableau", "title")
+        c.execute("""CREATE TABLE IF NOT EXISTS `tableau` (
+                     `team` INTEGER,
+                     `round` INTEGER,
+                     `event` TEXT,
+                     `scouter` TEXT,
+                     `phase` TEXT,
+                     `action` TEXT,
+                     `successes` INTEGER,
+                     `misses` INTEGER
+                     )""")
+        c.execute("SELECT * FROM `tableau` WHERE `team`=%s AND `round`=%s AND `event`=%s;", (self.team.number, self.team.round, self.team.event))
+        if not c.fetchone():
+            c.execute("INSERT INTO `tableau`(`team`, `round`, `event`) VALUES (%s,%s,%s);", (self.team.number, self.team.round, self.team.event))
+        debug(self.team.event)
+        d = self.team.getAttr()
+        c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
+                  (d["number"], d["round"], d["event"], "teleop", "highgoal", d["highgoal"], d["MissHighGoal"])
+                  )
+        c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
+                  (d["number"], d["round"], d["event"], "teleop", "lowgoal", d["lowgoal"], 0)
+                  )
+        c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
+                  (d["number"], d["round"], d["event"], "teleop", "gears", d["gears"], d["AptGears"]-d["gears"])
+                  )
+        c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
+                  (d["number"], d["round"], d["event"], "teleop", "climbed", 1 if d["climbed"] else 0, 0 if d["climbed"] else 1)
+                  )
+
+
+        #copy paste these when adding values
+        debug("compatTableau end", "title")
+
+
 
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
 #sea foam green: , rgb=[(14/255),(201/255),(170/255)] :  low goal

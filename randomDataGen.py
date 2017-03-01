@@ -36,7 +36,6 @@ def gen():
 
     c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", [d[-3], d[-2], d[-1]])
     test = c.fetchone()
-    print(test)
     if not test:
         c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", [d[-3], d[-2], d[-1]])
     else:

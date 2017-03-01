@@ -70,6 +70,10 @@ class cButton(Button):
             editedRGB[i] -= .2
         self.rgb = editedRGB
         super(cButton, self).__init__(**kwargs)
+class xcLabel(Label):
+    def __init__(self, rgb=[(14/255),(201/255),(170/255)], **kwargs):
+        self.rgb = rgb + [1]
+        super(xcLabel, self).__init__(**kwargs)
 
 #ascii table setup:
 #                                         #
@@ -101,6 +105,13 @@ def largeLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):      # gear label
 def largeSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):  # high/low goal label and disp            #
     return cLabel(text=txt, rgb=rgb, size_hint=(.155, height))      #-----------------------------------------#
 
+def xlargeSideLabel(txt, rgb=[.5,.5,.5], height=.08333333333):
+    return cLabel(text=txt, rgb=rgb, size_hint=(.155, height))      #-----------------------------------------#
+def xlargeLabel(txt, rgb=[.5,.5,.5], height=.08333333333):          #                                         #
+    return cLabel(text=txt, rgb=rgb, size_hint=(.23, height))       #-----------------------------------------#
+def xlargeButton(txt, rgb=[.5,.5,.5], height=.08333333333):         #                                         #
+    return cButton(text=txt, rgb=rgb, size_hint=(.23, height))      #-----------------------------------------#
+
 #all buttons and labels in the auton screen
 def autonLabel(txt, rgb=[.5, .5, .5]):
     return cLabel(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
@@ -114,6 +125,8 @@ class Team:
         self.highgoal = 0
         self.lowgoal = 0
         self.gears = 0
+        self.Foul = 0
+        self.TFoul = 0
         #teleop
         self.climb = 0 #whether or not the team climbed
         self.pickupGears = 0
@@ -128,7 +141,10 @@ class Team:
         #auton
         self.aHighgoal = 0
         self.aLowgoal = 0
-        self.aGears = 0
+        self.gfin = 1
+        self.g = 'never apt the gear'
+        self.gfing = 'never apt the gear'
+        self.gcolor = [(117/255), (117/255), (117/255)]
         self.aCrossed = 0 #crossed the base line
         self.color = True #True if blue, False if red
 
@@ -149,9 +165,11 @@ class Team:
         debug(str(len(data)))
         try: #getting all of the data out of the fetchone statement earlier
             #next 3 lines are compressed to save space and for no other reason, it is safe to replace the semicolons with newlines
-            self.event=data[3]; self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
-            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.aGears=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
-            self.prevnotes=data[18]; self.posfin=data[19]
+
+            self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
+            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
+            self.prevnotes=data[18]; self.posfin=data[19]; self.Foul=data[20]; self.TFoul=data[21]
+
         except:
             debug("whoops, putdata got an error")
             debug("heres data stuff: %s" % data)
@@ -190,6 +208,8 @@ class Screen(StackLayout):
                                                         `scouterName` TEXT NOT NULL,
                                                         `event` INTEGER,
                                                         `gears` INTEGER,
+                                                        `Foul` INTEGER
+                                                        `TFoul` INTEGER
                                                         `highgoal` INTEGER,
                                                         `lowgoal` INTEGER,
                                                         `capacity` INTEGER,
@@ -372,16 +392,29 @@ class Screen(StackLayout):
             self.buttoncolor =[0, 0,(200/255)]
         #grabbing team's position and correcting color
         if self.team.posfin == 1:
-            self.team.tog = 'boiler'
+            self.team.tog = '2'
             self.team.togcolor = [(117/255), (117/255), (117/255)]
         elif self.team.posfin == 2:
-            self.team.tog = 'middle'
+            self.team.tog = '3'
             self.team.togcolor = [0, (255/255), (42/255)]
         else:
-            self.team.tog = 'far'
+            self.team.tog = '1'
             self.team.togcolor = [(235/255), (61/255), (255/255)]
         debug("pos color", "header 2")
         debug(self.team.posfin)
+
+        if self.team.gfin == 1:
+            self.team.g = 'never apt the gear'
+            self.team.gcolor = [(117/255), (117/255), (117/255)]
+            self.team.gfing = 'made the gears'
+        elif self.team.gfin == 2:
+            self.team.g = 'made the gear'
+            self.team.gcolor = [0, (255/255), (42/255)]
+            self.team.gfing = 'missed the gears'
+        else:
+            self.team.g = 'missed the gear'
+            self.team.gcolor = [(235/255), (61/255), (255/255)]
+            self.team.gfing = 'never apt the gear'
 
         debug(self.team.color)
         c.close()
@@ -420,6 +453,20 @@ class Screen(StackLayout):
         if self.team.gears <= 0:
             self.team.gears = 0
         widg.text = str(self.team.gears)
+    def Foul(self, count, widg): #add to the foul count
+        debug("Foul()")
+        self.reloadList = [widg]
+        self.team.Foul += count
+        if self.team.Foul <= 0:
+            self.team.Foul = 0
+        widg.text = str(self.team.Foul)
+    def TFoul(self, count, widg): #add to the tech foul count
+        debug("TFoul()")
+        self.reloadList = [widg]
+        self.team.TFoul += count
+        if self.team.TFoul <= 0:
+            self.team.TFoul = 0
+        widg.text = str(self.team.TFoul)
     def addAptGear(self, count, widg): #add to attempted gears
         debug("addAptGear")
         self.reloadList = [widg]
@@ -441,7 +488,7 @@ class Screen(StackLayout):
         debug("climbed()")
         self.reloadList = [widg]
         self.team.climb = int(not self.team.climb)
-        widg.text = "yes" if self.team.climb else "no"
+        widg.text = "climbed" if self.team.climb else "didn't climbed"
     def color(self, widg, obj=None): #toggle the team color (red, blue)
         debug("color")
         self.reloadList = [widg]
@@ -466,11 +513,26 @@ class Screen(StackLayout):
         if self.team.aHighgoal <= 0:
             self.team.aHighgoal = 0
         widg.text = str(self.team.aHighgoal)
-    def aAddGear(self, widg, obj=None): #toggle if team used gear in auton
-        debug("aAddGear")
+    def checkg(self, widg, obj=None): #toggle if team used gear in auton
         self.reloadList = [widg]
-        self.team.aGears = int(not self.team.aGears)
-        widg.text = "The team %s use their gear."%("DID"if self.team.aGears else"DIDN'T")
+        self.team.gfin = self.team.gfin + 1
+        debug(self.team.gfing)
+        if self.team.gfin >= 3:
+            self.team.gfin = self.team.gfin - 3
+        if self.team.gfin == 1:
+            self.team.g = 'never apt the gear'
+            self.team.gcolor = [(117/255), (117/255), (117/255)]
+            self.team.gfing = 'made the gears'
+        elif self.team.gfin == 2:
+            self.team.g = 'made the gear'
+            self.team.gcolor = [0, (255/255), (42/255)]
+            self.team.gfing = 'missed the gears'
+        else:
+            self.team.g = 'missed the gear'
+            self.team.gcolor = [(235/255), (61/255), (255/255)]
+            self.team.gfing ='never apt the gear'
+
+        self.scrAuton()
     def aToggleCross(self, widg, obj=None): #toggle if team crossed base line in auton
         debug("aToggleCross")
         self.reloadList = [widg]
@@ -484,13 +546,14 @@ class Screen(StackLayout):
         if self.team.posfin >= 3:
             self.team.posfin = self.team.posfin - 3
         if self.team.posfin == 1:
-            self.team.tog = 'Boiler'
+
+            self.team.tog = '2'
             self.team.togcolor = [(117/255), (117/255), (117/255)]
         elif self.team.posfin == 2:
-            self.team.tog = 'Middle'
+            self.team.tog = '3'
             self.team.togcolor = [0, (255/255), (42/255)]
         else:
-            self.team.tog = 'Far'
+            self.team.tog = '1'
             self.team.togcolor = [(235/255), (61/255), (255/255)]
         self.scrMain()
 
@@ -500,49 +563,65 @@ class Screen(StackLayout):
         displist = list()
         self.camefrom = "tele" #used to route the cancel button on the areyousure scr
         #reset menu button text
-        self.didSave = "Save"
+        self.didSave = "save"
         self.didUpload = "               Upload \n (Save before uploading)"
         self.didUploadAll = "Upload all"
 
             #line 1
-        lowLbl =       largeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
-        dummyLbl =     cLabel(text="Event " + str(self.team.event), rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl)
-        teamDisp =     largeLabel("Team " + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp)
-        dummyLbl2 =    cLabel(text="Scouter " + str(self.team.scouterName), rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl2)
-        highLbl =      largeSideLabel("High goal\n\nHit     Miss", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl) #cheesing so that we don't have to make two labels
+        lowLbl =       xlargeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
+        dummyLbl =     xcLabel(text="", rgb=[0, (200/255), 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl)
+        teamDisp =     xlargeLabel("Team " + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp)
+        dummyLbl2 =    xcLabel(text="Scouter " + str(self.team.scouterName), rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl2)
+        highLbl =      xlargeSideLabel("High goal", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl) #cheesing so that we don't have to make two labels
 
             #line 2
+        lowLbl2=       xlargeSideLabel("", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl2)
+        checkClimb1 =   xlargeButton("climed" if self.team.climb else "didn't climbed", rgb=[(201/255),(28/255),(147/255)]); checkClimb1.bind(on_release=lambda x: self.climbed(checkClimb1)); displist.append(checkClimb1)
+        teamDisp2 =    xlargeLabel("" + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp2)
+        dummyLbl123 =  xcLabel(text="Event " + str(self.team.event), rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl123)
+        highLbl2 =     xlargeSideLabel("Hit        Miss", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl2) #cheesing so that we don't have to make two labels
+
+            #line 3
         lowDisp =      largeSideLabel(str(self.team.lowgoal), rgb=[(14/255),(201/255),(170/255)]); displist.append(lowDisp)
-        checkColor =  smallButton("Team Blue" if self.team.color else "Team Red", rgb=self.buttoncolor); checkColor.bind(on_release=lambda x: self.color(checkColor)); displist.append(checkColor)
-        checkpos = smallButton(self.team.tog, self.team.togcolor); checkpos.bind(on_release=lambda x: self.checkpos(checkpos)); displist.append(checkpos)
+        checkColor =   smallButton("Team Blue" if self.team.color else "Team Red", rgb=self.buttoncolor); checkColor.bind(on_release=lambda x: self.color(checkColor)); displist.append(checkColor)
+        checkpos =     smallButton(self.team.tog, self.team.togcolor); checkpos.bind(on_release=lambda x: self.checkpos(checkpos)); displist.append(checkpos)
         dummyLbl4 =    largeLabel("Teleop", rgb=[0, 0, 0, 1]); displist.append(dummyLbl4)
         toggleExit =   largeButton("Menu", rgb=[(201/255),(170/255),(28/255)]); toggleExit.bind(on_release=self.scrExit); displist.append(toggleExit)
         highDisp =     smallSideLabel(str(self.team.highgoal), rgb=[(28/255),(201/255),(40/255)]); displist.append(highDisp)
         MissHighDisp = smallSideLabel(str(self.team.MissHighGoal), rgb=[(120/255),(201/255),(40/255)]); displist.append(MissHighDisp)
 
-            #line 3
+            #line 4
         incLow1 =      smallSideButton("-1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(-1, lowDisp)); displist.append(incLow1)
         incLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(incLow3)
-        capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
-        toggleAuton =  largeButton("Auton", rgb=[(201/255),(170/255),(28/255)]); toggleAuton.bind(on_release=self.scrAuton); displist.append(toggleAuton)
-        toggleCapab =  largeButton("Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
+        FoulLbl =      smallLabel("Fouls", rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulLbl)
+        FoulDisp =     smallLabel(str(self.team.Foul), rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulDisp)
+        TFoulLbl =     smallLabel("TFouls", rgb=[(28/255),0,(201/255)]); displist.append(TFoulLbl)#AptGears is the varible for Miss Gears
+        TFoulDisp =    smallLabel(str(self.team.TFoul), rgb=[(28/255),0,(201/255)]); displist.append(TFoulDisp)
+        #dummyLbl124=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl124)
+        #dummyLbl126=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl126)
+        toggleAuton =  smallButton("Auton", rgb=[(201/255),(170/255),(28/255)]); toggleAuton.bind(on_release=self.scrAuton); displist.append(toggleAuton)
+        toggleCapab =  smallButton("Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
         decHigh =      smallSideButton("-1", rgb=[(28/255),(201/255),(40/255)]); decHigh.bind(on_release=lambda x: self.addHigh(-1, highDisp)); displist.append(decHigh)
         decMissHigh =  smallSideButton("-1", rgb=[(120/255),(201/255),(40/255)]); decMissHigh.bind(on_release=lambda x: self.addMissHigh(-1, MissHighDisp)); displist.append(decMissHigh)
 
-            #line 4
+            #line 5
         incLow9 =     smallSideButton("-9", rgb=[(14/255),(201/255),(170/255)]); incLow9.bind(on_release=lambda x: self.addLow(-9, lowDisp)); displist.append(incLow9)
-        incLow15 =     smallSideButton("-15", rgb=[(14/255),(201/255),(170/255)]); incLow15.bind(on_release=lambda x: self.addLow(-15, lowDisp)); displist.append(incLow15)
-        capDispAdd =   smallButton("+" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispAdd.bind(on_release=lambda x: self.addLow(self.team.capacity, lowDisp)); displist.append(capDispAdd)
-        capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
-        toggleTeam =   largeButton("Team", rgb=[(201/255),(170/255),(28/255)]); toggleTeam.bind(on_release=self.areYouSure); displist.append(toggleTeam)
+        incLow15 =    smallSideButton("-15", rgb=[(14/255),(201/255),(170/255)]); incLow15.bind(on_release=lambda x: self.addLow(-15, lowDisp)); displist.append(incLow15)
+        addFoul =     smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addFoul.bind(on_release=lambda x: self.Foul(1, FoulDisp)); displist.append(addFoul)
+        decFoul =     smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decFoul.bind(on_release=lambda x: self.Foul(-1, FoulDisp)); displist.append(decFoul)
+        addTFoul =    smallButton("+", rgb=[(28/255),0,(201/255)]); addTFoul.bind(on_release=lambda x: self.TFoul(1, TFoulDisp)); displist.append(addTFoul)
+        decTFoul =    smallButton("-", rgb=[(28/255),0,(201/255)]); decTFoul.bind(on_release=lambda x: self.TFoul(-1, TFoulDisp)); displist.append(decTFoul)
+        #dummyLbl125=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl125)
+        #dummyLbl127=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl127)
         togglenotes =  largeButton("Notes", rgb=[(201/255),(170/255),(28/255)]); togglenotes.bind(on_release=self.scrnotes); displist.append(togglenotes)
         addHigh1 =     smallSideButton("-3", rgb=[(28/255),(201/255),(40/255)]); addHigh1.bind(on_release=lambda x: self.addHigh(-3, highDisp)); displist.append(addHigh1)
         addMissHigh1 = smallSideButton("-3", rgb=[(120/255),(201/255),(40/255)]); addMissHigh1.bind(on_release=lambda x: self.addMissHigh(-3, MissHighDisp)); displist.append(addMissHigh1)
 
-            #line 5
+            #line 6
         decLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); decLow1.bind(on_release=lambda x: self.addLow(1, lowDisp)); displist.append(decLow1)
-        decLow5 =      smallSideButton("3", rgb=[(14/255),(201/255),(170/255)]); decLow5.bind(on_release=lambda x: self.addLow(5, lowDisp)); displist.append(decLow5)
-        climbLbl =     largeLabel("Climbed", rgb=[(201/255),(28/255),(147/255)]); displist.append(climbLbl)
+
+        decLow5 =      smallSideButton("5", rgb=[(14/255),(201/255),(170/255)]); decLow5.bind(on_release=lambda x: self.addLow(5, lowDisp)); displist.append(decLow5)
+        capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
         gearLbl =      smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
         gearDisp =     smallLabel(str(self.team.gears), rgb=[(28/255),(129/255),(201/255)]); displist.append(gearDisp)
         AptGearLbl =   smallLabel("AptGears", rgb=[(28/255),0,(201/255)]); displist.append(AptGearLbl)#AptGears is the varible for Miss Gears
@@ -550,10 +629,12 @@ class Screen(StackLayout):
         addHigh2 =     smallSideButton("+1", rgb=[(28/255),(201/255),(40/255)]); addHigh2.bind(on_release=lambda x: self.addHigh(1, highDisp)); displist.append(addHigh2)
         addMissHigh2 = smallSideButton("+1", rgb=[(120/255),(201/255),(40/255)]); addMissHigh2.bind(on_release=lambda x: self.addMissHigh(1, MissHighDisp)); displist.append(addMissHigh2)
 
-            #line 6
-        decLow10 =     smallSideButton("9", rgb=[(14/255),(201/255),(170/255)]); decLow10.bind(on_release=lambda x: self.addLow(10, lowDisp)); displist.append(decLow10)
-        decLow20 =     smallSideButton("15", rgb=[(14/255),(201/255),(170/255)]); decLow20.bind(on_release=lambda x: self.addLow(20, lowDisp)); displist.append(decLow20)
-        checkClimb =   largeButton("yes" if self.team.climb else "no", rgb=[(201/255),(28/255),(147/255)]); checkClimb.bind(on_release=lambda x: self.climbed(checkClimb)); displist.append(checkClimb)
+
+            #line 7
+        decLow10 =     smallSideButton("10", rgb=[(14/255),(201/255),(170/255)]); decLow10.bind(on_release=lambda x: self.addLow(10, lowDisp)); displist.append(decLow10)
+        decLow20 =     smallSideButton("20", rgb=[(14/255),(201/255),(170/255)]); decLow20.bind(on_release=lambda x: self.addLow(20, lowDisp)); displist.append(decLow20)
+        capDispAdd =   smallButton("+" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispAdd.bind(on_release=lambda x: self.addLow(self.team.capacity, lowDisp)); displist.append(capDispAdd)
+        capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
         addGear =      smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addGear.bind(on_release=lambda x: self.addGear(1, gearDisp)); displist.append(addGear)
         decGear =      smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decGear.bind(on_release=lambda x: self.addGear(-1, gearDisp)); displist.append(decGear)
         addAptGear =   smallButton("+", rgb=[(28/255),0,(201/255)]); addAptGear.bind(on_release=lambda x: self.addAptGear(1, AptGearDisp)); displist.append(addAptGear)
@@ -662,7 +743,7 @@ class Screen(StackLayout):
         high3 =       autonButton(txt="+3", rgb=[(28/255),(201/255),(40/255)]); high3.bind(on_release=lambda x: self.aAddHigh(3, highDisp)); displist.append(high3)
         #row 5
         lowm1 =   autonButton(txt="-1", rgb=[(14/255),(201/255),(170/255)]); lowm1.bind(on_release=lambda x: self.aAddLow(-1, lowDisp)); displist.append(lowm1)
-        gearBtn = autonButton(txt="The team %s use their gear."%("DID"if self.team.aGears else"DIDN'T"),rgb=[(28/255),(129/255),(201/255)]);gearBtn.bind(on_release=self.aAddGear);displist.append(gearBtn)
+        checkg =  autonButton(self.team.g, self.team.gcolor); checkg.bind(on_release=lambda x: self.checkg(checkg)); displist.append(checkg)
         highm1 =  autonButton(txt="-1", rgb=[(28/255),(201/255),(40/255)]); highm1.bind(on_release=lambda x: self.aAddHigh(-1, highDisp)); displist.append(highm1)
         #row 6
         lowm5 =  autonButton(txt="-5", rgb=[(14/255),(201/255),(170/255)]); lowm5.bind(on_release=lambda x: self.aAddLow(-5, lowDisp)); displist.append(lowm5)
@@ -706,8 +787,8 @@ class Screen(StackLayout):
         db = sqlite3.connect("rounddat.db") #connect to local db
         d = self.team.getAttr() #get information dict from self.team
         debug(d)
-        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
-                   (d["highgoal"],d["lowgoal"],d["gears"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["aGears"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
+        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`Foul`=?,`TFoul`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
+                   (d["highgoal"],d["lowgoal"],d["gears"],d["Foul"],d["TFoul"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    ) #sql wizardry, simply takes out all of the stuff stored in d (data) and puts it in its respective places
         db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number)) #updating the constants storage table
@@ -748,7 +829,7 @@ class Screen(StackLayout):
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db")
         cl = dbl.cursor()
-        c.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        c.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         data = c.fetchone()
 
     def upload(self, obj=None): #uploads loaded data into the pi database
@@ -764,21 +845,8 @@ class Screen(StackLayout):
         self.compatTableau(c)
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()
-        cl.execute("SELECT * FROM `main`")
-        fetchall = cl.fetchall()
-        fetchone = None
-        for tup in fetchall: #workaround for a bug i was getting on the commented line below
-            debug("Target round: %s, number: %s, event: %s" % (self.team.round, self.team.number, self.team.event))
-            debug("Actual round: %s, number: %s, event: %s" % (tup[0], tup[1], tup[3]))
-            if tup[0] == self.team.round and tup[1] == self.team.number and tup[3] == self.team.event:
-                debug("whoag they match, breaking")
-                fetchone = tup
-                break
-        cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
-        if not fetchone:
-            fetchone = cl.fetchone()
-        debug(fetchone)
-        fetchoneList = list(fetchone) #IF THIS ERRORS THE PROGRAM COULD NOT FIND THE CORRECT DATA TO UPLOAD
+        cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        fetchoneList = list(cl.fetchone()) #grabbing all data from that giant sql statement above
         debug("fetchoneList: "+str(fetchoneList))
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, self.team.event))
@@ -788,7 +856,7 @@ class Screen(StackLayout):
         elif test: #if the pi database is already set to take the data
             debug("THERE SHOULD BE DATA HERE: " + str(test))
 
-        c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
+        c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`Foul`=%s,`TFoul`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
                   fetchoneList
                   ) #send the pi the data
         d = self.team.getAttr()
@@ -797,7 +865,7 @@ class Screen(StackLayout):
             c.execute("INSERT INTO `team`(`team`) VALUES (%s);", (self.team.number,)) #make it if it doesn't exist
         c.execute("UPDATE `team` SET `capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s WHERE `team`=%s",
                   (d['capacity'],d["pickupGears"],d["pickupBalls"],d['number'])
-                  ) #set the constants for the team
+                  ) #set the constants for the team'''
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchoneList[-3], fetchoneList[-2], fetchoneList[-1])) #test to see if data actually got there
         debug(c.fetchone())

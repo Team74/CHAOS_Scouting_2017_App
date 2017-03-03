@@ -920,7 +920,11 @@ class Screen(StackLayout):
         #copy paste these when adding values
         debug("compatTableau end", "title")
 
-
+'''just to let you know if you are here on satrday that i had to push stuff to your computer to put on the tablet.
+the stuff you left is now on justincase.py. the newest scoutng data base is on the tablet marketed new.
+your progam can't upload nor can the tablets but my can so something must have happened between our computers
+i will leave my computer on in case you need it
+I am working on time right now so if you have any questions just ask tim or me on monday'''
 
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
 #sea foam green: , rgb=[(14/255),(201/255),(170/255)] :  low goal

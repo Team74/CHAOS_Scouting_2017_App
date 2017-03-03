@@ -12,6 +12,14 @@ class scout:
         out.write(','+ 'pos 1 blue'+','+ '1B Score'+','+ 'pos 2 blue' +','+ '2B Score'+','+ 'pos 3 blue'+','+ '3B Score'+','+ 'red score'+','+ 'blue score'+ '\n')
         teams = {}
         ha = 0
+        self.R =   'error'
+        self.RR =  'error'
+        self.RRR = 'error'
+        self.FR =  'error'
+        self.B =   'error'
+        self.BB =  'error'
+        self.BBB = 'error'
+        self.FB =  'error'
 
         for row in pos.fetchall():
             ro = row[0]
@@ -22,11 +30,15 @@ class scout:
             teams[ro].setdefault(color,{})
             teams[ro][color][position] = team
 
-        for row in pos.fetchall():
-            R = 1
-            RR = 2
-            FR = R + RR + RRR
-            FB = B + BB + BBB
+        '''for row in pos.fetchall():
+            self.R =
+            self.RR =
+            self.RRR =
+            self.B =
+            self.BB =
+            self.BBB =
+            self.FR = self.R + self.RR + self.RRR
+            self.FB = self.B + self.BB + self.BBB'''
 
         for rou ,co in teams.items():
             #print(co)
@@ -38,16 +50,9 @@ class scout:
             co[1].setdefault(0,'error')
             co[1].setdefault(1,'error')
             co[1].setdefault(2,'error')
-            R =   'error'
-            RR =  'error'
-            RRR = 'error'
-            FR =  'error'
-            B =   'error'
-            BB =  'error'
-            BBB = 'error'
-            FB =  'error'
-            out.write(str (rou)+','+str (co[0][0])+','+str (R)+','+str (co[0][1])+','+str (RR)+','+str (co[0][2])+','+str (RRR)+','+str (co[1][0]))
-            out.write(','+str (B)+','+str (co[1][1])+','+str (BB)+','+str (co[1][2])+','+str (BBB)+','+str (FR)+','+str (FB)+ '\n' )
+
+            out.write(str (rou)+','+str (co[0][0])+','+str (self.R)+','+str (co[0][1])+','+str (self.RR)+','+str (co[0][2])+','+str (self.RRR)+','+str (co[1][0]))
+            out.write(','+str (self.B)+','+str (co[1][1])+','+str (self.BB)+','+str (co[1][2])+','+str (self.BBB)+','+str (self.FR)+','+str (self.FB)+ '\n' )
 
             ha = ha + 1
             print ('done'+ str (ha))

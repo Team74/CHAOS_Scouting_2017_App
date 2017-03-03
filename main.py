@@ -9,9 +9,10 @@ from kivy.graphics import BorderImage
 from kivy.properties import *
 from kivy.lang import Builder
 
+import threading
 import sqlite3
 import mysql.connector
-
+import time
 import os
 import random
 
@@ -117,6 +118,8 @@ def autonLabel(txt, rgb=[.5, .5, .5]):
     return cLabel(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
 def autonButton(txt, rgb=[.5,.5,.5]):
     return cButton(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
+def smallautonButton(txt, rgb=[.5,.5,.5]):
+    return cButton(text=str(txt), rgb=rgb, size_hint=((1/6), (1/6)))
 
 class Team:
     def __init__(self, number):
@@ -195,8 +198,30 @@ class Team:
 #main class, overwrites stacklayout layout from kivy
 class Screen(StackLayout):
     prev = ''
+    #save above
+    yes = 'start'
+    can = 'start'
+    timeLbl = None
+
+    def Hi(self):
+        self.yes = time.time()
+
+    def runtime(self):
+        while 1:
+            print('yes it is working')
+            if not self.timeLbl == None:
+                if self.yes == 'start':
+                    pass
+                else:
+                    self.can=time.time() - self.yes
+                    self.timeLbl.text = str(self.can)
+            time.sleep(1)
+
     def __init__(self, **kwargs):
         super(Screen, self).__init__(**kwargs)
+        self.timeth = threading.Thread(target=self.runtime)
+        self.daemon = True
+        self.timeth.start()
         self.lastLowVal = 0
         self.choose()
 
@@ -725,6 +750,7 @@ class Screen(StackLayout):
         self.reloadlist = list()
         self.camefrom = "auton"
 
+
         #row 1
         lowLbl =  autonLabel(txt="Low", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
         teamLbl = autonLabel(txt=self.team.number, rgb=[0, 0, 0, 1]); displist.append(teamLbl)
@@ -735,11 +761,12 @@ class Screen(StackLayout):
         highDisp = autonLabel(txt=self.team.aHighgoal, rgb=[(28/255),(201/255),(40/255)]); displist.append(highDisp)
         #row 3
         low1 =       autonButton(txt="+1", rgb=[(14/255),(201/255),(170/255)]); low1.bind(on_release=lambda x: self.aAddLow(1, lowDisp)); displist.append(low1)
-        toggleTele = autonButton(txt="Teleop", rgb=[(201/255),(170/255),(28/255)]); toggleTele.bind(on_release=self.scrMain); displist.append(toggleTele)
+        toggleTele = smallautonButton(txt="Teleop", rgb=[(201/255),(170/255),(28/255)]); toggleTele.bind(on_release=self.scrMain); displist.append(toggleTele)
+        toggleCapab = smallautonButton(txt="Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
         high1 =      autonButton(txt="+1", rgb=[(28/255),(201/255),(40/255)]); high1.bind(on_release=lambda x: self.aAddHigh(1, highDisp)); displist.append(high1)
         #row 4
         low5 =        autonButton(txt="+5", rgb=[(14/255),(201/255),(170/255)]); low5.bind(on_release=lambda x: self.aAddLow(5, lowDisp)); displist.append(low5)
-        toggleCapab = autonButton(txt="Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
+        self.timeLbl = autonButton(txt=self.can, rgb=[0, 0, 0]);self.timeLbl.bind(on_release=lambda x: self.Hi());displist.append(self.timeLbl)
         high3 =       autonButton(txt="+3", rgb=[(28/255),(201/255),(40/255)]); high3.bind(on_release=lambda x: self.aAddHigh(3, highDisp)); displist.append(high3)
         #row 5
         lowm1 =   autonButton(txt="-1", rgb=[(14/255),(201/255),(170/255)]); lowm1.bind(on_release=lambda x: self.aAddLow(-1, lowDisp)); displist.append(lowm1)

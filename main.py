@@ -114,7 +114,7 @@ def xlargeButton(txt, rgb=[.5,.5,.5], height=.08333333333):         #           
     return cButton(text=txt, rgb=rgb, size_hint=(.23, height))      #-----------------------------------------#
 
 #all buttons and labels in the auton screen
-def autonLabel(txt, rgb=[.5, .5, .5]):
+def autonLabel(txt, rgb=[.5,.5,.5]):
     return cLabel(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
 def autonButton(txt, rgb=[.5,.5,.5]):
     return cButton(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
@@ -208,7 +208,7 @@ class Screen(StackLayout):
 
     def runtime(self):
         while 1:
-            print('yes it is working')
+            debug('yes it is working')
             if not self.timeLbl == None:
                 if self.yes == 'start':
                     pass
@@ -219,9 +219,9 @@ class Screen(StackLayout):
 
     def __init__(self, **kwargs):
         super(Screen, self).__init__(**kwargs)
-        self.timeth = threading.Thread(target=self.runtime)
+        #self.timeth = threading.Thread(target=self.runtime)
         self.daemon = True
-        self.timeth.start()
+        #self.timeth.start()
         self.lastLowVal = 0
         self.choose()
 
@@ -233,8 +233,8 @@ class Screen(StackLayout):
                                                         `scouterName` TEXT NOT NULL,
                                                         `event` INTEGER,
                                                         `gears` INTEGER,
-                                                        `Foul` INTEGER
-                                                        `TFoul` INTEGER
+                                                        `Foul` INTEGER,
+                                                        `TFoul` INTEGER,
                                                         `highgoal` INTEGER,
                                                         `lowgoal` INTEGER,
                                                         `capacity` INTEGER,
@@ -349,12 +349,14 @@ class Screen(StackLayout):
     def setTeam(self, team, round, name): #gets the team name from the shared database in the raspberry pi
         debug("setTeam()", "title")
         #unpack info sent by pressGo method
-        self.team = Team(team)
-        self.team.round = round #it renamed a method but it still works don't question it
-        self.team.scouterName = name
+        if not team == "came from handleEvent":
+            self.team = Team(team)
+            self.team.round = round #it renamed a method but it still works don't question it
+            self.team.scouterName = name
 
         dbl = sqlite3.connect("rounddat.db") #connect to local database
         cl = dbl.cursor()
+        self.makeDB(cl)
 
         cl.execute("CREATE TABLE IF NOT EXISTS `currentEvent` (`events` INTEGER)")
         try:
@@ -367,35 +369,43 @@ class Screen(StackLayout):
         debug("db is a %s connection" % dbtype)
         c = db.cursor()
         c.execute("SELECT `currentEvent` FROM `events`")
-        self.team.event = c.fetchone()[0]
+        try:
+            self.team.event = c.fetchone()[0] #TODO: catch error here and ask user to enter an event name
+        except:
+            c.close()
+            db.close()
+            cl.close()
+            dbl.close()
+            self.scrEvent()
+            return
         debug(self.team.event)
         if dbtype == "mysql":
             debug("putting events into local DB")
             cl.execute("INSERT INTO `events`(`currentEvent`) VALUES (?)", (self.team.event,))
         self.team.prevnotes = "" #reinitialize notes??? may need to be removed
 
-        cl.execute("SELECT * FROM `team` WHERE `team`=?", (team,))
+        cl.execute("SELECT * FROM `team` WHERE `team`=?", (self.team.number,))
         found = cl.fetchone() #returns None if there is no data
         if not found:
-            dbl.execute("INSERT INTO `team`(`team`) VALUES (?);", (team,))
+            dbl.execute("INSERT INTO `team`(`team`) VALUES (?);", (self.team.number,))
             dbl.commit()
         else:
             self.team.putCData(cl)
 
         try: #little bit more complex, has to remake the database if not found
-            cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=?", (round, team)) #this will error if the main table isnt there
+            cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=?", (self.team.round, self.team.number)) #this will error if the main table isnt there
             found = cl.fetchone()
 
         except:
             debug("had to remake db")
-            self.makeDB()
+            self.makeDB(cl)
             found = False
             pass
         if not found:
             debug("putting data into main...")
-            dbl.execute("INSERT INTO `main`(`round`,`team`,`scouterName`,`event`) VALUES (?,?,?,?);", (round, team, name, self.team.event))
+            dbl.execute("INSERT INTO `main`(`round`,`team`,`scouterName`,`event`) VALUES (?,?,?,?);", (self.team.round, self.team.number, self.team.scouterName, self.team.event))
             debug("round: %s, team: %s, scouter: %s, event: %s", (round, team, name, self.team.event))
-            dbl.execute("UPDATE `main` SET `scouterName`=? WHERE `round`=? AND `team`=? AND `event`=?", (name, round, team, self.team.event))
+            dbl.execute("UPDATE `main` SET `scouterName`=? WHERE `round`=? AND `team`=? AND `event`=?", (self.team.scouterName, self.team.round, self.team.number, self.team.event))
             dbl.commit()
         else:
             self.team.putData(found)
@@ -429,17 +439,17 @@ class Screen(StackLayout):
         debug(self.team.posfin)
 
         if self.team.gfin == 1:
-            self.team.g = 'never apt the gear'
+            self.team.g = 'never attempted the gear'
             self.team.gcolor = [(117/255), (117/255), (117/255)]
-            self.team.gfing = 'made the gears'
+            self.team.gfing = 'made the gear'
         elif self.team.gfin == 2:
             self.team.g = 'made the gear'
             self.team.gcolor = [0, (255/255), (42/255)]
-            self.team.gfing = 'missed the gears'
+            self.team.gfing = 'missed the gear'
         else:
             self.team.g = 'missed the gear'
             self.team.gcolor = [(235/255), (61/255), (255/255)]
-            self.team.gfing = 'never apt the gear'
+            self.team.gfing = 'never attempted the gear'
 
         debug(self.team.color)
         c.close()
@@ -448,6 +458,15 @@ class Screen(StackLayout):
         dbl.close()
         debug("setTeam() end", "title")
         self.scrMain()
+
+    def handleEvent(self, obj=None):
+        eventname = self.eventTxt.text
+        db = sqlite3.connect('rounddat.db')
+        db.execute("INSERT INTO `events`(`currentEvent`) VALUES (?)", (eventname,))
+        db.commit()
+        db.close()
+        self.setTeam("came from handleEvent", None, None)
+        return
 
     #the following functions are called by the buttons on the interface when pressed
     def addLow(self, count, widg): #add to low goals scored
@@ -782,6 +801,20 @@ class Screen(StackLayout):
             self.add_widget(widg)
         debug("scrAuton() end", "title")
 
+    def scrEvent(self, obj=None):
+        debug("scrEvent", "title")
+        self.clear_widgets()
+        displist = list()
+
+        eventLbl = cLabel(text="Event name", size_hint=(.5, .5)); displist.append(eventLbl)
+        self.eventTxt = TextInput(multiline=False, size_hint=(.5, .5)); self.eventTxt.bind(on_text_validate=self.handleEvent); displist.append(self.eventTxt)
+        goBtn = cButton(text="Go", size_hint=(1, .5)); goBtn.bind(on_release=self.handleEvent); displist.append(goBtn)
+
+        for widg in displist:
+            self.add_widget(widg)
+        debug("scrEvent end", "title")
+
+
     def areYouSure(self, camefrom=None, obj=None): #prompt for leaving saved data
         debug("areYouSure()", "title")
         self.clear_widgets()
@@ -869,7 +902,7 @@ class Screen(StackLayout):
             self.scrExit()
             return
         c = db.cursor(buffered=True)
-        self.compatTableau(c)
+        #self.compatTableau(c)
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()
         cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
@@ -949,9 +982,11 @@ class Screen(StackLayout):
 
 '''just to let you know if you are here on satrday that i had to push stuff to your computer to put on the tablet.
 the stuff you left is now on justincase.py. the newest scoutng data base is on the tablet marketed new.
-your progam can't upload nor can the tablets but my can so something must have happened between our computers
+the tablet can't save it just freezes but our computers can so something happened on the tablet
+i might have messed up your debug by printing something every second
+when you close the program on the computer you need to exit out of my then control c the teminal because of threads
 i will leave my computer on in case you need it
-I am working on time right now so if you have any questions just ask tim or me on monday'''
+I am working on time right now so if you have any questions just ask tim or just talk to me on monday'''
 
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
 #sea foam green: , rgb=[(14/255),(201/255),(170/255)] :  low goal

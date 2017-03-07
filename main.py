@@ -135,7 +135,7 @@ class Team:
         self.pickupGears = 0
         self.pickupBalls = 0
         self.capacity = 0
-        self.AptGears = 0
+        self.AtpGears = 0
         self.MissHighGoal = 0 #attempts
         self.prevnotes = '' #simply notes
         self.posfin = 1 #numerical representation of tog
@@ -170,7 +170,7 @@ class Team:
             #next 3 lines are compressed to save space and for no other reason, it is safe to replace the semicolons with newlines
 
             self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
-            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
+            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.AtpGears=data[16]; self.MissHighGoal=data[17]
             self.prevnotes=data[18]; self.posfin=data[19]; self.Foul=data[20]; self.TFoul=data[21]
 
         except:
@@ -246,7 +246,7 @@ class Screen(StackLayout):
                                                         `aCrossed` INTEGER,
                                                         `climbed` INTEGER,
                                                         `team color` INTEGER,
-                                                        `AptGears` INTEGER,
+                                                        `AtpGears` INTEGER,
                                                         `MissHighGoal` INTEGER,
                                                         `notes` TEXT,
                                                         `position` INTEGER,
@@ -358,11 +358,11 @@ class Screen(StackLayout):
         cl = dbl.cursor()
         self.makeDB(cl)
 
-        cl.execute("CREATE TABLE IF NOT EXISTS `currentEvent` (`events` INTEGER)")
-        try:
+        cl.execute("CREATE TABLE IF NOT EXISTS `events` (`currentEvent` INTEGER)")
+        try: #if connected to the internet, look for the event name in the pi database
             db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi database
             dbtype = "mysql"
-        except:
+        except: #otherwise, take the event from the local database
             db = sqlite3.connect('rounddat.db')
             dbtype = "sqlite"
 
@@ -392,10 +392,9 @@ class Screen(StackLayout):
         else:
             self.team.putCData(cl)
 
-        try: #little bit more complex, has to remake the database if not found
-            cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=?", (self.team.round, self.team.number)) #this will error if the main table isnt there
+        try: #remake the database if not found
+            cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event)) #this will error if the main table isnt there
             found = cl.fetchone()
-
         except:
             debug("had to remake db")
             self.makeDB(cl)
@@ -514,10 +513,10 @@ class Screen(StackLayout):
     def addAptGear(self, count, widg): #add to attempted gears
         debug("addAptGear")
         self.reloadList = [widg]
-        self.team.AptGears += count
-        if self.team.AptGears <= 0:
-            self.team.AptGears = 0
-        widg.text = str(self.team.AptGears)
+        self.team.AtpGears += count
+        if self.team.AtpGears <= 0:
+            self.team.AtpGears = 0
+        widg.text = str(self.team.AtpGears)
     def canPickGear(self, widg, obj=None): #toggle the ability to pick up gears
         debug("canPickGear()")
         self.reloadList = [widg]
@@ -639,7 +638,7 @@ class Screen(StackLayout):
         incLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(incLow3)
         FoulLbl =      smallLabel("Fouls", rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulLbl)
         FoulDisp =     smallLabel(str(self.team.Foul), rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulDisp)
-        TFoulLbl =     smallLabel("TFouls", rgb=[(28/255),0,(201/255)]); displist.append(TFoulLbl)#AptGears is the varible for Miss Gears
+        TFoulLbl =     smallLabel("TFouls", rgb=[(28/255),0,(201/255)]); displist.append(TFoulLbl)#AtpGears is the varible for Miss Gears
         TFoulDisp =    smallLabel(str(self.team.TFoul), rgb=[(28/255),0,(201/255)]); displist.append(TFoulDisp)
         #dummyLbl124=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl124)
         #dummyLbl126=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl126)
@@ -668,8 +667,8 @@ class Screen(StackLayout):
         capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
         gearLbl =      smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
         gearDisp =     smallLabel(str(self.team.gears), rgb=[(28/255),(129/255),(201/255)]); displist.append(gearDisp)
-        AptGearLbl =   smallLabel("AptGears", rgb=[(28/255),0,(201/255)]); displist.append(AptGearLbl)#AptGears is the varible for Miss Gears
-        AptGearDisp =  smallLabel(str(self.team.AptGears), rgb=[(28/255),0,(201/255)]); displist.append(AptGearDisp)
+        AptGearLbl =   smallLabel("AtpGears", rgb=[(28/255),0,(201/255)]); displist.append(AptGearLbl)#AtpGears is the varible for Miss Gears
+        AptGearDisp =  smallLabel(str(self.team.AtpGears), rgb=[(28/255),0,(201/255)]); displist.append(AptGearDisp)
         addHigh2 =     smallSideButton("+1", rgb=[(28/255),(201/255),(40/255)]); addHigh2.bind(on_release=lambda x: self.addHigh(1, highDisp)); displist.append(addHigh2)
         addMissHigh2 = smallSideButton("+1", rgb=[(120/255),(201/255),(40/255)]); addMissHigh2.bind(on_release=lambda x: self.addMissHigh(1, MissHighDisp)); displist.append(addMissHigh2)
 
@@ -847,8 +846,8 @@ class Screen(StackLayout):
         db = sqlite3.connect("rounddat.db") #connect to local db
         d = self.team.getAttr() #get information dict from self.team
         debug(d)
-        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`Foul`=?,`TFoul`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
-                   (d["highgoal"],d["lowgoal"],d["gears"],d["Foul"],d["TFoul"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
+        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`Foul`=?,`TFoul`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AtpGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
+                   (d["highgoal"],d["lowgoal"],d["gears"],d["Foul"],d["TFoul"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["AtpGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    ) #sql wizardry, simply takes out all of the stuff stored in d (data) and puts it in its respective places
         db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number)) #updating the constants storage table
@@ -889,7 +888,7 @@ class Screen(StackLayout):
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db")
         cl = dbl.cursor()
-        c.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        c.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AtpGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         data = c.fetchone()
 
     def upload(self, obj=None): #uploads loaded data into the pi database
@@ -902,11 +901,24 @@ class Screen(StackLayout):
             self.scrExit()
             return
         c = db.cursor(buffered=True)
-        #self.compatTableau(c)
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()
-        cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
-        fetchoneList = list(cl.fetchone()) #grabbing all data from that giant sql statement above
+        cl.execute("SELECT * FROM `main`")
+        fetchall = cl.fetchall()
+        fetchone = None
+        for tup in fetchall: #workaround for a bug i was getting on the commented line below
+            debug("Target round: %s, number: %s, event: %s" % (self.team.round, self.team.number, self.team.event))
+            debug("Actual round: %s, number: %s, event: %s" % (tup[0], tup[1], tup[3]))
+            if tup[0] == self.team.round and tup[1] == self.team.number and tup[3] == self.team.event:
+                debug("whoag they match, breaking")
+                fetchone = tup
+                break
+        cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AtpGears, MissHighGoal, notes, Foul, TFoul, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        if not fetchone:
+            fetchone = cl.fetchone()
+        self.compatTableau(c, fetchone)
+        debug(fetchone)
+        fetchoneList = list(fetchone) #IF THIS ERRORS THE PROGRAM COULD NOT FIND THE CORRECT DATA TO UPLOAD
         debug("fetchoneList: "+str(fetchoneList))
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, self.team.event))
@@ -916,7 +928,7 @@ class Screen(StackLayout):
         elif test: #if the pi database is already set to take the data
             debug("THERE SHOULD BE DATA HERE: " + str(test))
 
-        c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`Foul`=%s,`TFoul`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
+        c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AtpGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s, `Foul`=%s, `TFoul`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
                   fetchoneList
                   ) #send the pi the data
         d = self.team.getAttr()
@@ -925,7 +937,7 @@ class Screen(StackLayout):
             c.execute("INSERT INTO `team`(`team`) VALUES (%s);", (self.team.number,)) #make it if it doesn't exist
         c.execute("UPDATE `team` SET `capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s WHERE `team`=%s",
                   (d['capacity'],d["pickupGears"],d["pickupBalls"],d['number'])
-                  ) #set the constants for the team'''
+                  ) #set the constants for the team
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (fetchoneList[-3], fetchoneList[-2], fetchoneList[-1])) #test to see if data actually got there
         debug(c.fetchone())
@@ -938,7 +950,7 @@ class Screen(StackLayout):
         debug("upload() end")
         self.scrExit()
 
-    def compatTableau(self, c):
+    def compatTableau(self, c, d):
         debug("compatTableau", "title")
         c.execute("""CREATE TABLE IF NOT EXISTS `tableau` (
                      `team` INTEGER,
@@ -953,34 +965,49 @@ class Screen(StackLayout):
                      `score` INTEGER
                      )""")
         debug(self.team.event)
-        d = self.team.getAttr()
-        try: accuracy = int((d["highgoal"]/(d["highgoal"]+d["MissHighGoal"]))*100)
+        debug(d)
+        #order:
+        #0 scouterName, 1 gears, 2 highgoal, 3 lowgoal, 4 capacity, 5 pickupBalls, 6 pickupGears, 7 aHighgoal, 8 aLowgoal, 9 aGears, 10 aCrossed,
+        #11 climbed, 12 team color, 13 AtpGears, 14 MissHighGoal, 15 notes, 16 Foul, 17 TFoul, 18 position, 19 team, 20 round, 21 event
+
+        try: accuracy = int((d[2]]/(d[2]+d[14]))*100)
         except ZeroDivisionError: accuracy = 0
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (" + "%s,"*9 + ");",\
-                  (d["number"], d["round"], d["event"], "teleop", "highgoal", d["highgoal"], d["MissHighGoal"], accuracy, int(d["highgoal"]/3))
+        c.execute("SELECT * FROM `tableau` WHERE team=? AND round=? AND event=?", (d[19], d[20], d[21]))
+        if c.fetchone: return
+        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
+                  (d[19], d[20], d[21], "teleop", "highgoal", d[2], d[14], accuracy, int(d[2]/3))
                   )
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (" + "%s,"*9 + ");",
-                  (d["number"], d["round"], d["event"], "teleop", "lowgoal", d["lowgoal"], 0, 100, int(d["lowgoal"]/9))
+        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
+                  (d[19], d[20], d[21], "teleop", "lowgoal", d[3], 0, 100, int(d[3]/9))
                   )
-        misses = d["AptGears"] - d["gears"]
-        try: accuracy = int((d["gears"]/(d["gears"]+d["AptGears"]))*100)
+        misses = d[13] - d[1]
+        try: accuracy = int((d[1]/d[13])*100)
         except ZeroDivisionError: accuracy = 0
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (" + "%s,"*9 + ");",
-                  (d["number"], d["round"], d["event"], "teleop", "gears", d["gears"], misses, accuracy, int(d["gears"]))
-                  )
-        #you are like a little baby
-        #watch this
-        succ = 1 if d["climb"] else 0
-        miss = 0 if d["climb"] else 1
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (" + "%s,"*9 + ");",
-                  (d["number"], d["round"], d["event"], "teleop", "climbed", succ, miss, d["climb"], d["climb"]*50)
+        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
+                  (d[19], d[20], d[21], "teleop", "gears", d[1], misses, accuracy, int(d[1]))
                   )
 
+        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
+                  (d[19], d[20], d[21], "teleop", "climbed", d[11], int(not d[11]), d[11]*100, d[11]*50)
+                  )
+        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
+                  (d[19], d[20], d[21], "auton", "highgoal", d[7], 0, 0, int(d[7]))
+                  )
+        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
+                  (d[19], d[20], d[21], "auton", "lowgoal", d[8], 0, 0, int(d[8]/3))
+                  )
+        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
+                  (d[19], d[20], d[21], "auton", "gears", d[9], 0, 0, int(d[9]))
+                  )
+        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
+                  (d[19], d[20], d[21], "auton", "crossed line", d[10], int(not d[10]), 0, d[10]*10)
+                  )
 
         #copy paste these when adding values
+
         debug("compatTableau end", "title")
 
-'''just to let you know if you are here on satrday that i had to push stuff to your computer to put on the tablet.
+'''just to let you know if you are here on saturday that i had to push stuff to your computer to put on the tablet.
 the stuff you left is now on justincase.py. the newest scoutng data base is on the tablet marketed new.
 the tablet can't save it just freezes but our computers can so something happened on the tablet
 i might have messed up your debug by printing something every second

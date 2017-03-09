@@ -9,6 +9,8 @@ from kivy.graphics import BorderImage
 from kivy.properties import *
 from kivy.lang import Builder
 
+import signal
+import sys
 import threading
 import sqlite3
 import mysql.connector
@@ -135,7 +137,7 @@ class Team:
         self.pickupGears = 0
         self.pickupBalls = 0
         self.capacity = 0
-        self.AptGears = 0
+        self.atpGears = 0
         self.MissHighGoal = 0 #attempts
         self.prevnotes = '' #simply notes
         self.posfin = 1 #numerical representation of tog
@@ -145,8 +147,8 @@ class Team:
         self.aHighgoal = 0
         self.aLowgoal = 0
         self.gfin = 1
-        self.g = 'never apt the gear'
-        self.gfing = 'never apt the gear'
+        self.g = 'never atp the gear'
+        self.gfing = 'never atp the gear'
         self.gcolor = [(117/255), (117/255), (117/255)]
         self.aCrossed = 0 #crossed the base line
         self.color = True #True if blue, False if red
@@ -170,7 +172,7 @@ class Team:
             #next 3 lines are compressed to save space and for no other reason, it is safe to replace the semicolons with newlines
 
             self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
-            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.AptGears=data[16]; self.MissHighGoal=data[17]
+            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.atpGears=data[16]; self.MissHighGoal=data[17]
             self.prevnotes=data[18]; self.posfin=data[19]; self.Foul=data[20]; self.TFoul=data[21]
 
         except:
@@ -202,26 +204,15 @@ class Screen(StackLayout):
     yes = 'start'
     can = 'start'
     timeLbl = None
+    running = 1
 
-    def Hi(self):
-        self.yes = time.time()
-
-    def runtime(self):
-        while 1:
-            print('yes it is working')
-            if not self.timeLbl == None:
-                if self.yes == 'start':
-                    pass
-                else:
-                    self.can=time.time() - self.yes
-                    self.timeLbl.text = str(self.can)
-            time.sleep(1)
 
     def __init__(self, **kwargs):
+
         super(Screen, self).__init__(**kwargs)
-        self.timeth = threading.Thread(target=self.runtime)
+        #self.timeth = threading.Thread(target=self.runtime)
         self.daemon = True
-        self.timeth.start()
+        #self.timeth.start()
         self.lastLowVal = 0
         self.choose()
 
@@ -246,7 +237,7 @@ class Screen(StackLayout):
                                                         `aCrossed` INTEGER,
                                                         `climbed` INTEGER,
                                                         `team color` INTEGER,
-                                                        `AptGears` INTEGER,
+                                                        `atpGears` INTEGER,
                                                         `MissHighGoal` INTEGER,
                                                         `notes` TEXT,
                                                         `position` INTEGER,
@@ -429,7 +420,7 @@ class Screen(StackLayout):
         debug(self.team.posfin)
 
         if self.team.gfin == 1:
-            self.team.g = 'never apt the gear'
+            self.team.g = 'never atp the gear'
             self.team.gcolor = [(117/255), (117/255), (117/255)]
             self.team.gfing = 'made the gears'
         elif self.team.gfin == 2:
@@ -439,7 +430,7 @@ class Screen(StackLayout):
         else:
             self.team.g = 'missed the gear'
             self.team.gcolor = [(235/255), (61/255), (255/255)]
-            self.team.gfing = 'never apt the gear'
+            self.team.gfing = 'never atp the gear'
 
         debug(self.team.color)
         c.close()
@@ -492,13 +483,13 @@ class Screen(StackLayout):
         if self.team.TFoul <= 0:
             self.team.TFoul = 0
         widg.text = str(self.team.TFoul)
-    def addAptGear(self, count, widg): #add to attempted gears
-        debug("addAptGear")
+    def addatpGear(self, count, widg): #add to attempted gears
+        debug("addatpGear")
         self.reloadList = [widg]
-        self.team.AptGears += count
-        if self.team.AptGears <= 0:
-            self.team.AptGears = 0
-        widg.text = str(self.team.AptGears)
+        self.team.atpGears += count
+        if self.team.atpGears <= 0:
+            self.team.atpGears = 0
+        widg.text = str(self.team.atpGears)
     def canPickGear(self, widg, obj=None): #toggle the ability to pick up gears
         debug("canPickGear()")
         self.reloadList = [widg]
@@ -513,7 +504,7 @@ class Screen(StackLayout):
         debug("climbed()")
         self.reloadList = [widg]
         self.team.climb = int(not self.team.climb)
-        widg.text = "climbed" if self.team.climb else "didn't climbed"
+        widg.text = "climbed" if self.team.climb else "didn't climb"
     def color(self, widg, obj=None): #toggle the team color (red, blue)
         debug("color")
         self.reloadList = [widg]
@@ -545,7 +536,7 @@ class Screen(StackLayout):
         if self.team.gfin >= 3:
             self.team.gfin = self.team.gfin - 3
         if self.team.gfin == 1:
-            self.team.g = 'never apt the gear'
+            self.team.g = 'never atp the gear'
             self.team.gcolor = [(117/255), (117/255), (117/255)]
             self.team.gfing = 'made the gears'
         elif self.team.gfin == 2:
@@ -555,7 +546,7 @@ class Screen(StackLayout):
         else:
             self.team.g = 'missed the gear'
             self.team.gcolor = [(235/255), (61/255), (255/255)]
-            self.team.gfing ='never apt the gear'
+            self.team.gfing ='never atp the gear'
 
         self.scrAuton()
     def aToggleCross(self, widg, obj=None): #toggle if team crossed base line in auton
@@ -595,13 +586,14 @@ class Screen(StackLayout):
             #line 1
         lowLbl =       xlargeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
         dummyLbl =     xcLabel(text="", rgb=[0, (200/255), 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl)
+        #self.timeLbl = xlargeButton(txt=str(self.can), rgb=[0, 0, 0]);self.timeLbl.bind(on_release=lambda x: self.Hi());displist.append(self.timeLbl)
         teamDisp =     xlargeLabel("Team " + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp)
         dummyLbl2 =    xcLabel(text="Scouter " + str(self.team.scouterName), rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl2)
         highLbl =      xlargeSideLabel("High goal", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl) #cheesing so that we don't have to make two labels
 
             #line 2
         lowLbl2=       xlargeSideLabel("", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl2)
-        checkClimb1 =   xlargeButton("climed" if self.team.climb else "didn't climbed", rgb=[(201/255),(28/255),(147/255)]); checkClimb1.bind(on_release=lambda x: self.climbed(checkClimb1)); displist.append(checkClimb1)
+        checkClimb1 =   xlargeButton("climbed" if self.team.climb else "didn't climb", rgb=[(201/255),(28/255),(147/255)]); checkClimb1.bind(on_release=lambda x: self.climbed(checkClimb1)); displist.append(checkClimb1)
         teamDisp2 =    xlargeLabel("" + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp2)
         dummyLbl123 =  xcLabel(text="Event " + str(self.team.event), rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl123)
         highLbl2 =     xlargeSideLabel("Hit        Miss", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl2) #cheesing so that we don't have to make two labels
@@ -620,7 +612,7 @@ class Screen(StackLayout):
         incLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(incLow3)
         FoulLbl =      smallLabel("Fouls", rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulLbl)
         FoulDisp =     smallLabel(str(self.team.Foul), rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulDisp)
-        TFoulLbl =     smallLabel("TFouls", rgb=[(28/255),0,(201/255)]); displist.append(TFoulLbl)#AptGears is the varible for Miss Gears
+        TFoulLbl =     smallLabel("TFouls", rgb=[(28/255),0,(201/255)]); displist.append(TFoulLbl)#atpGears is the varible for Miss Gears
         TFoulDisp =    smallLabel(str(self.team.TFoul), rgb=[(28/255),0,(201/255)]); displist.append(TFoulDisp)
         #dummyLbl124=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl124)
         #dummyLbl126=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl126)
@@ -649,8 +641,8 @@ class Screen(StackLayout):
         capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
         gearLbl =      smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
         gearDisp =     smallLabel(str(self.team.gears), rgb=[(28/255),(129/255),(201/255)]); displist.append(gearDisp)
-        AptGearLbl =   smallLabel("AptGears", rgb=[(28/255),0,(201/255)]); displist.append(AptGearLbl)#AptGears is the varible for Miss Gears
-        AptGearDisp =  smallLabel(str(self.team.AptGears), rgb=[(28/255),0,(201/255)]); displist.append(AptGearDisp)
+        atpGearLbl =   smallLabel("atpGears", rgb=[(28/255),0,(201/255)]); displist.append(atpGearLbl)#atpGears is the varible for Miss Gears
+        atpGearDisp =  smallLabel(str(self.team.atpGears), rgb=[(28/255),0,(201/255)]); displist.append(atpGearDisp)
         addHigh2 =     smallSideButton("+1", rgb=[(28/255),(201/255),(40/255)]); addHigh2.bind(on_release=lambda x: self.addHigh(1, highDisp)); displist.append(addHigh2)
         addMissHigh2 = smallSideButton("+1", rgb=[(120/255),(201/255),(40/255)]); addMissHigh2.bind(on_release=lambda x: self.addMissHigh(1, MissHighDisp)); displist.append(addMissHigh2)
 
@@ -662,8 +654,8 @@ class Screen(StackLayout):
         capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
         addGear =      smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addGear.bind(on_release=lambda x: self.addGear(1, gearDisp)); displist.append(addGear)
         decGear =      smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decGear.bind(on_release=lambda x: self.addGear(-1, gearDisp)); displist.append(decGear)
-        addAptGear =   smallButton("+", rgb=[(28/255),0,(201/255)]); addAptGear.bind(on_release=lambda x: self.addAptGear(1, AptGearDisp)); displist.append(addAptGear)
-        decAptGear =   smallButton("-", rgb=[(28/255),0,(201/255)]); decAptGear.bind(on_release=lambda x: self.addAptGear(-1, AptGearDisp)); displist.append(decAptGear)
+        addatpGear =   smallButton("+", rgb=[(28/255),0,(201/255)]); addatpGear.bind(on_release=lambda x: self.addatpGear(1, atpGearDisp)); displist.append(addatpGear)
+        decatpGear =   smallButton("-", rgb=[(28/255),0,(201/255)]); decatpGear.bind(on_release=lambda x: self.addatpGear(-1, atpGearDisp)); displist.append(decatpGear)
         addHigh3 =     smallSideButton("+3", rgb=[(28/255),(201/255),(40/255)]); addHigh3.bind(on_release=lambda x: self.addHigh(3, highDisp)); displist.append(addHigh3)
         addMissHigh3 = smallSideButton("+3", rgb=[(120/255),(201/255),(40/255)]); addMissHigh3.bind(on_release=lambda x: self.addMissHigh(3, MissHighDisp)); displist.append(addMissHigh3)
 
@@ -766,7 +758,8 @@ class Screen(StackLayout):
         high1 =      autonButton(txt="+1", rgb=[(28/255),(201/255),(40/255)]); high1.bind(on_release=lambda x: self.aAddHigh(1, highDisp)); displist.append(high1)
         #row 4
         low5 =        autonButton(txt="+5", rgb=[(14/255),(201/255),(170/255)]); low5.bind(on_release=lambda x: self.aAddLow(5, lowDisp)); displist.append(low5)
-        self.timeLbl = autonButton(txt=self.can, rgb=[0, 0, 0]);self.timeLbl.bind(on_release=lambda x: self.Hi());displist.append(self.timeLbl)
+        teamLbl1 = autonLabel(txt='', rgb=[0, 0, 0, 1]); displist.append(teamLbl1)
+        #self.timeLbl = autonButton(txt=self.can, rgb=[0, 0, 0]);self.timeLbl.bind(on_release=lambda x: self.Hi());displist.append(self.timeLbl)
         high3 =       autonButton(txt="+3", rgb=[(28/255),(201/255),(40/255)]); high3.bind(on_release=lambda x: self.aAddHigh(3, highDisp)); displist.append(high3)
         #row 5
         lowm1 =   autonButton(txt="-1", rgb=[(14/255),(201/255),(170/255)]); lowm1.bind(on_release=lambda x: self.aAddLow(-1, lowDisp)); displist.append(lowm1)
@@ -814,8 +807,8 @@ class Screen(StackLayout):
         db = sqlite3.connect("rounddat.db") #connect to local db
         d = self.team.getAttr() #get information dict from self.team
         debug(d)
-        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`Foul`=?,`TFoul`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AptGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
-                   (d["highgoal"],d["lowgoal"],d["gears"],d["Foul"],d["TFoul"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["AptGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
+        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`Foul`=?,`TFoul`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `atpGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
+                   (d["highgoal"],d["lowgoal"],d["gears"],d["Foul"],d["TFoul"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["atpGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
                    ) #sql wizardry, simply takes out all of the stuff stored in d (data) and puts it in its respective places
         db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number)) #updating the constants storage table
@@ -856,7 +849,7 @@ class Screen(StackLayout):
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db")
         cl = dbl.cursor()
-        c.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        c.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, atpGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         data = c.fetchone()
 
     def upload(self, obj=None): #uploads loaded data into the pi database
@@ -872,7 +865,7 @@ class Screen(StackLayout):
         #self.compatTableau(c)
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()
-        cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AptGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, atpGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         fetchoneList = list(cl.fetchone()) #grabbing all data from that giant sql statement above
         debug("fetchoneList: "+str(fetchoneList))
 
@@ -883,7 +876,7 @@ class Screen(StackLayout):
         elif test: #if the pi database is already set to take the data
             debug("THERE SHOULD BE DATA HERE: " + str(test))
 
-        c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`Foul`=%s,`TFoul`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AptGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
+        c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`Foul`=%s,`TFoul`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `atpGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
                   fetchoneList
                   ) #send the pi the data
         d = self.team.getAttr()
@@ -929,7 +922,7 @@ class Screen(StackLayout):
                   (d["number"], d["round"], d["event"], "teleop", "lowgoal", d["lowgoal"], 0)
                   )
         c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
-                  (d["number"], d["round"], d["event"], "teleop", "gears", d["gears"], d["AptGears"]-d["gears"])
+                  (d["number"], d["round"], d["event"], "teleop", "gears", d["gears"], d["atpGears"]-d["gears"])
                   )
         c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
                   (d["number"], d["round"], d["event"], "teleop", "climbed", 1 if d["climbed"] else 0, 0 if d["climbed"] else 1)

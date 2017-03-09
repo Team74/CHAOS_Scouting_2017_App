@@ -36,7 +36,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma seperated e.g. requirements = kivy
-requirements = sqlite3,kivy,hostpython3,python3crystax,mysql_connector, plyer, android
+requirements = sqlite3, kivy, hostpython3, python3crystax, mysql_connector, plyer, android
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes

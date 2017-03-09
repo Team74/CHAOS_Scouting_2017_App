@@ -85,32 +85,31 @@ class xcLabel(Label):
 #large button/label witdh div by 2                                  #-----------------------------------------#
 def smallButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):     # the add capacity to low goal buttons    #
     return cButton(text=txt, rgb=rgb, size_hint=(.115, height))     #-----------------------------------------#
-def smallLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cLabel(text=txt, rgb=rgb, size_hint=(.115, height))
+def smallLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):      # fouls/tfouls label and disp             #
+    return cLabel(text=txt, rgb=rgb, size_hint=(.115, height))      #-----------------------------------------#
                                                                     #                                         #
 #large side button/label width div by 2                             #-----------------------------------------#
 def smallSideButton(txt, rgb=[.5,.5,.5], height=.1666666666666667): # low goal add and subtract buttons       #
     return cButton(text=txt, rgb=rgb, size_hint=(.0775, height))    #-----------------------------------------#
-def smallSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cLabel(text=txt, rgb=rgb, size_hint=(.0775, height))     #                                         #
+def smallSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):  # high goal / miss high goal label        #
+    return cLabel(text=txt, rgb=rgb, size_hint=(.0775, height))     #-----------------------------------------#
                                                                     #                                         #
 #full size buttons and labels for the middle of the UI              #-----------------------------------------#
-def largeButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):     # gear add and subtract buttons           #
+def largeButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):     # notes button, menu button               #
     return cButton(text=txt, rgb=rgb, size_hint=(.23, height))      #-----------------------------------------#
-def largeLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):      # gear label, climb label, capacity label #
+def largeLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):      # capacity label                          #
     return cLabel(text=txt, rgb=rgb, size_hint=(.23, height))       #-----------------------------------------#
-                                                                    #                                         #
-                                                                    #                                         #
 #full size buttons and labels for the side of the UI                #                                         #
 #large button not needed                                            #-----------------------------------------#
-def largeSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):  # high/low goal label and disp            #
+def largeSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):  # low goal disp                           #
     return cLabel(text=txt, rgb=rgb, size_hint=(.155, height))      #-----------------------------------------#
-
-def xlargeSideLabel(txt, rgb=[.5,.5,.5], height=.08333333333):
+                                                                    #                                         #
+#half heightened buttons and labels for prettying                   #-----------------------------------------#
+def xlargeSideLabel(txt, rgb=[.5,.5,.5], height=.08333333333):      # high goal / low goal label              #
     return cLabel(text=txt, rgb=rgb, size_hint=(.155, height))      #-----------------------------------------#
-def xlargeLabel(txt, rgb=[.5,.5,.5], height=.08333333333):          #                                         #
+def xlargeLabel(txt, rgb=[.5,.5,.5], height=.08333333333):          # round disp                              #
     return cLabel(text=txt, rgb=rgb, size_hint=(.23, height))       #-----------------------------------------#
-def xlargeButton(txt, rgb=[.5,.5,.5], height=.08333333333):         #                                         #
+def xlargeButton(txt, rgb=[.5,.5,.5], height=.08333333333):         # climbed button                          #
     return cButton(text=txt, rgb=rgb, size_hint=(.23, height))      #-----------------------------------------#
 
 #all buttons and labels in the auton screen
@@ -188,7 +187,7 @@ class Team:
                 if data[i] == None:
                     data[i] = 0
         else:
-            debug("data is lame-o (there is none of it)")
+            debug("data is lame-o, doesn")
         try:
             self.capacity=data[1]; self.pickupBalls=data[2]; self.pickupGears=data[3]; debug(data[1])
         except:
@@ -199,28 +198,11 @@ class Team:
 class Screen(StackLayout):
     prev = ''
     #save above
-    yes = 'start'
-    can = 'start'
     timeLbl = None
-
-    def Hi(self):
-        self.yes = time.time()
-
-    def runtime(self):
-        while 1:
-            debug('yes it is working')
-            if not self.timeLbl == None:
-                if self.yes == 'start':
-                    pass
-                else:
-                    self.can=time.time() - self.yes
-                    self.timeLbl.text = str(self.can)
-            time.sleep(1)
 
     def __init__(self, **kwargs):
         super(Screen, self).__init__(**kwargs)
         #self.timeth = threading.Thread(target=self.runtime)
-        self.daemon = True
         #self.timeth.start()
         self.lastLowVal = 0
         self.choose()
@@ -608,7 +590,7 @@ class Screen(StackLayout):
         #reset menu button text
         self.didSave = "save"
         self.didUpload = "               Upload \n (Save before uploading)"
-        self.didUploadAll = "Upload all"
+        self.didUploadAll = "Upload all \n (Save before uploading)"
 
             #line 1
         lowLbl =       xlargeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
@@ -634,8 +616,8 @@ class Screen(StackLayout):
         MissHighDisp = smallSideLabel(str(self.team.MissHighGoal), rgb=[(120/255),(201/255),(40/255)]); displist.append(MissHighDisp)
 
             #line 4
-        incLow1 =      smallSideButton("-1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(-1, lowDisp)); displist.append(incLow1)
-        incLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(incLow3)
+        decLow1 =      smallSideButton("-1", rgb=[(14/255),(201/255),(170/255)]); decLow1.bind(on_release=lambda x: self.addLow(-1, lowDisp)); displist.append(decLow1)
+        decLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); decLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(decLow3)
         FoulLbl =      smallLabel("Fouls", rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulLbl)
         FoulDisp =     smallLabel(str(self.team.Foul), rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulDisp)
         TFoulLbl =     smallLabel("TFouls", rgb=[(28/255),0,(201/255)]); displist.append(TFoulLbl)#AtpGears is the varible for Miss Gears
@@ -648,8 +630,8 @@ class Screen(StackLayout):
         decMissHigh =  smallSideButton("-1", rgb=[(120/255),(201/255),(40/255)]); decMissHigh.bind(on_release=lambda x: self.addMissHigh(-1, MissHighDisp)); displist.append(decMissHigh)
 
             #line 5
-        incLow9 =     smallSideButton("-9", rgb=[(14/255),(201/255),(170/255)]); incLow9.bind(on_release=lambda x: self.addLow(-9, lowDisp)); displist.append(incLow9)
-        incLow15 =    smallSideButton("-15", rgb=[(14/255),(201/255),(170/255)]); incLow15.bind(on_release=lambda x: self.addLow(-15, lowDisp)); displist.append(incLow15)
+        decLow9 =     smallSideButton("-9", rgb=[(14/255),(201/255),(170/255)]); decLow9.bind(on_release=lambda x: self.addLow(-9, lowDisp)); displist.append(decLow9)
+        decLow15 =    smallSideButton("-15", rgb=[(14/255),(201/255),(170/255)]); decLow15.bind(on_release=lambda x: self.addLow(-15, lowDisp)); displist.append(decLow15)
         addFoul =     smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addFoul.bind(on_release=lambda x: self.Foul(1, FoulDisp)); displist.append(addFoul)
         decFoul =     smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decFoul.bind(on_release=lambda x: self.Foul(-1, FoulDisp)); displist.append(decFoul)
         addTFoul =    smallButton("+", rgb=[(28/255),0,(201/255)]); addTFoul.bind(on_release=lambda x: self.TFoul(1, TFoulDisp)); displist.append(addTFoul)
@@ -661,9 +643,9 @@ class Screen(StackLayout):
         addMissHigh1 = smallSideButton("-3", rgb=[(120/255),(201/255),(40/255)]); addMissHigh1.bind(on_release=lambda x: self.addMissHigh(-3, MissHighDisp)); displist.append(addMissHigh1)
 
             #line 6
-        decLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); decLow1.bind(on_release=lambda x: self.addLow(1, lowDisp)); displist.append(decLow1)
+        incLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(1, lowDisp)); displist.append(incLow1)
 
-        decLow5 =      smallSideButton("5", rgb=[(14/255),(201/255),(170/255)]); decLow5.bind(on_release=lambda x: self.addLow(5, lowDisp)); displist.append(decLow5)
+        incLow3 =      smallSideButton("5", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(3, lowDisp)); displist.append(incLow3)
         capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
         gearLbl =      smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
         gearDisp =     smallLabel(str(self.team.gears), rgb=[(28/255),(129/255),(201/255)]); displist.append(gearDisp)
@@ -674,8 +656,8 @@ class Screen(StackLayout):
 
 
             #line 7
-        decLow10 =     smallSideButton("10", rgb=[(14/255),(201/255),(170/255)]); decLow10.bind(on_release=lambda x: self.addLow(10, lowDisp)); displist.append(decLow10)
-        decLow20 =     smallSideButton("20", rgb=[(14/255),(201/255),(170/255)]); decLow20.bind(on_release=lambda x: self.addLow(20, lowDisp)); displist.append(decLow20)
+        incLow9 =     smallSideButton("9", rgb=[(14/255),(201/255),(170/255)]); incLow9.bind(on_release=lambda x: self.addLow(9, lowDisp)); displist.append(incLow9)
+        incLow15 =     smallSideButton("15", rgb=[(14/255),(201/255),(170/255)]); incLow15.bind(on_release=lambda x: self.addLow(15, lowDisp)); displist.append(incLow15)
         capDispAdd =   smallButton("+" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispAdd.bind(on_release=lambda x: self.addLow(self.team.capacity, lowDisp)); displist.append(capDispAdd)
         capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
         addGear =      smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addGear.bind(on_release=lambda x: self.addGear(1, gearDisp)); displist.append(addGear)
@@ -913,11 +895,17 @@ class Screen(StackLayout):
                 debug("whoag they match, breaking")
                 fetchone = tup
                 break
-        cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AtpGears, MissHighGoal, notes, Foul, TFoul, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        #next line used to reorder all values that it was getting from the database, but was replaced with SELECT *
+        cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         if not fetchone:
             fetchone = cl.fetchone()
-        self.compatTableau(c, fetchone)
         debug(fetchone)
+        #i was dumb and was taking a strange ordering from the above cl.execute. it changed and then i had to reorder all the compatTableau values
+        #it was easier to reorder them than to reformat the compatTableau, so this next line happens
+        fetchone = list(fetchone)
+        compatOrder = [fetchone[2]] + fetchone[4:10] + fetchone[12:13] + [fetchone[1], fetchone[0], fetchone[3]]
+        debug("compatTableau gets " + str(compatOrder))
+        #self.compatTableau(c, compatOrder)
         fetchoneList = list(fetchone) #IF THIS ERRORS THE PROGRAM COULD NOT FIND THE CORRECT DATA TO UPLOAD
         debug("fetchoneList: "+str(fetchoneList))
 
@@ -956,7 +944,6 @@ class Screen(StackLayout):
                      `team` INTEGER,
                      `round` INTEGER,
                      `event` TEXT,
-                     `scouter` TEXT,
                      `phase` TEXT,
                      `action` TEXT,
                      `successes` INTEGER,
@@ -964,16 +951,15 @@ class Screen(StackLayout):
                      `accuracy` INTEGER,
                      `score` INTEGER
                      )""")
-        debug(self.team.event)
         debug(d)
         #order:
         #0 scouterName, 1 gears, 2 highgoal, 3 lowgoal, 4 capacity, 5 pickupBalls, 6 pickupGears, 7 aHighgoal, 8 aLowgoal, 9 aGears, 10 aCrossed,
         #11 climbed, 12 team color, 13 AtpGears, 14 MissHighGoal, 15 notes, 16 Foul, 17 TFoul, 18 position, 19 team, 20 round, 21 event
 
-        try: accuracy = int((d[2]]/(d[2]+d[14]))*100)
+        try: accuracy = int((d[2]/(d[2]+d[14]))*100)
         except ZeroDivisionError: accuracy = 0
-        c.execute("SELECT * FROM `tableau` WHERE team=? AND round=? AND event=?", (d[19], d[20], d[21]))
-        if c.fetchone: return
+        c.execute("SELECT * FROM `tableau` WHERE team=%s AND round=%s AND event=%s", (d[19], d[20], d[21]))
+        if c.fetchone(): return
         c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
                   (d[19], d[20], d[21], "teleop", "highgoal", d[2], d[14], accuracy, int(d[2]/3))
                   )
@@ -1007,13 +993,6 @@ class Screen(StackLayout):
 
         debug("compatTableau end", "title")
 
-'''just to let you know if you are here on saturday that i had to push stuff to your computer to put on the tablet.
-the stuff you left is now on justincase.py. the newest scoutng data base is on the tablet marketed new.
-the tablet can't save it just freezes but our computers can so something happened on the tablet
-i might have messed up your debug by printing something every second
-when you close the program on the computer you need to exit out of my then control c the teminal because of threads
-i will leave my computer on in case you need it
-I am working on time right now so if you have any questions just ask tim or just talk to me on monday'''
 
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
 #sea foam green: , rgb=[(14/255),(201/255),(170/255)] :  low goal

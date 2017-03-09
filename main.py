@@ -198,12 +198,9 @@ class Team:
 class Screen(StackLayout):
     prev = ''
     #save above
-    timeLbl = None
 
     def __init__(self, **kwargs):
         super(Screen, self).__init__(**kwargs)
-        #self.timeth = threading.Thread(target=self.runtime)
-        #self.timeth.start()
         self.lastLowVal = 0
         self.choose()
 

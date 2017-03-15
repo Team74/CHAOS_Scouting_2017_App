@@ -87,32 +87,32 @@ class xcLabel(Label):
 #large button/label witdh div by 2                                  #-----------------------------------------#
 def smallButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):     # the add capacity to low goal buttons    #
     return cButton(text=txt, rgb=rgb, size_hint=(.115, height))     #-----------------------------------------#
-def smallLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cLabel(text=txt, rgb=rgb, size_hint=(.115, height))
+def smallLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):      # fouls/tfouls label and disp             #
+    return cLabel(text=txt, rgb=rgb, size_hint=(.115, height))      #-----------------------------------------#
                                                                     #                                         #
                                                                     #large side button/label width div by 2                             #-----------------------------------------#
 def smallSideButton(txt, rgb=[.5,.5,.5], height=.1666666666666667): # low goal add and subtract buttons       #
     return cButton(text=txt, rgb=rgb, size_hint=(.0775, height))    #-----------------------------------------#
-def smallSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):
-    return cLabel(text=txt, rgb=rgb, size_hint=(.0775, height))     #                                         #
+def smallSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):  # high goal / miss high goal label        #
+    return cLabel(text=txt, rgb=rgb, size_hint=(.0775, height))     #-----------------------------------------#
                                                                     #                                         #
-                                                                    #full size buttons and labels for the middle of the UI              #-----------------------------------------#
-def largeButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):     # gear add and subtract buttons           #
+#full size buttons and labels for the middle of the UI              #-----------------------------------------#
+def largeButton(txt, rgb=[.5,.5,.5], height=.1666666666666667):     # notes button, menu button               #
     return cButton(text=txt, rgb=rgb, size_hint=(.23, height))      #-----------------------------------------#
-def largeLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):      # gear label, climb label, capacity label #
+def largeLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):      # capacity label                          #
     return cLabel(text=txt, rgb=rgb, size_hint=(.23, height))       #-----------------------------------------#
-                                                                    #                                         #
-                                                                    #                                         #
-                                                                    #full size buttons and labels for the side of the UI                #                                         #
-                                                                    #large button not needed                                            #-----------------------------------------#
-def largeSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):  # high/low goal label and disp            #
-    return cLabel(text=txt, rgb=rgb, size_hint=(.155, height))      #-----------------------------------------#
 
-def xlargeSideLabel(txt, rgb=[.5,.5,.5], height=.08333333333):
+#full size buttons and labels for the side of the UI                #                                         #
+#large button not needed                                            #-----------------------------------------#
+def largeSideLabel(txt, rgb=[.5,.5,.5], height=.1666666666666667):  # low goal disp                           #
     return cLabel(text=txt, rgb=rgb, size_hint=(.155, height))      #-----------------------------------------#
-def xlargeLabel(txt, rgb=[.5,.5,.5], height=.08333333333):          #                                         #
+                                                                    #                                         #
+#half heightened buttons and labels for prettying                   #-----------------------------------------#
+def xlargeSideLabel(txt, rgb=[.5,.5,.5], height=.08333333333):      # high goal / low goal label              #
+    return cLabel(text=txt, rgb=rgb, size_hint=(.155, height))      #-----------------------------------------#
+def xlargeLabel(txt, rgb=[.5,.5,.5], height=.08333333333):          # round disp                              #
     return cLabel(text=txt, rgb=rgb, size_hint=(.23, height))       #-----------------------------------------#
-def xlargeButton(txt, rgb=[.5,.5,.5], height=.08333333333):         #                                         #
+def xlargeButton(txt, rgb=[.5,.5,.5], height=.08333333333):         # climbed button                          #
     return cButton(text=txt, rgb=rgb, size_hint=(.23, height))      #-----------------------------------------#
 
 #all buttons and labels in the auton screen
@@ -171,9 +171,11 @@ class Team:
         try: #getting all of the data out of the fetchone statement earlier
             #next 3 lines are compressed to save space and for no other reason, it is safe to replace the semicolons with newlines
 
-            self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
-            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.AtpGears=data[16]; self.MissHighGoal=data[17]
-            self.prevnotes=data[18]; self.posfin=data[19]; self.Foul=data[20]; self.TFoul=data[21]
+            self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]
+            self.pickupGears=data[9]
+            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working')
+            self.AtpGears=data[16]; self.MissHighGoal=data[17]
+            self.prevnotes=data[18]; self.posfin=data[19]; self.notes=data[20]; self.TFoul=data[21]
 
         except:
             debug("whoops, putdata got an error")
@@ -190,7 +192,7 @@ class Team:
                 if data[i] == None:
                     data[i] = 0
         else:
-            debug("data is lame-o (there is none of it)")
+            debug("data is lame-o, doesn")
         try:
             self.capacity=data[1]; self.pickupBalls=data[2]; self.pickupGears=data[3]; debug(data[1])
         except:
@@ -201,18 +203,9 @@ class Team:
 class Screen(StackLayout):
     prev = ''
     #save above
-    yes = 'start'
-    can = 'start'
-    timeLbl = None
-    running = 1
-
-
     def __init__(self, **kwargs):
 
         super(Screen, self).__init__(**kwargs)
-        #self.timeth = threading.Thread(target=self.runtime)
-        self.daemon = True
-        #self.timeth.start()
         self.lastLowVal = 0
         self.choose()
 
@@ -224,8 +217,6 @@ class Screen(StackLayout):
                                                         `scouterName` TEXT NOT NULL,
                                                         `event` INTEGER,
                                                         `gears` INTEGER,
-                                                        `Foul` INTEGER,
-                                                        `TFoul` INTEGER,
                                                         `highgoal` INTEGER,
                                                         `lowgoal` INTEGER,
                                                         `capacity` INTEGER,
@@ -241,7 +232,9 @@ class Screen(StackLayout):
                                                         `MissHighGoal` INTEGER,
                                                         `notes` TEXT,
                                                         `position` INTEGER,
-                                                        PRIMARY KEY(`team`,`round`))''')
+                                                        `Foul` INTEGER,
+                                                        `TFoul` INTEGER,
+                                                        )''')
         db.execute("CREATE TABLE IF NOT EXISTS `lastscouter` (`name` TEXT)")
         db.execute('''CREATE TABLE IF NOT EXISTS `team`(
                                                         `team`INTEGER NOT NULL,
@@ -599,7 +592,7 @@ class Screen(StackLayout):
         #reset menu button text
         self.didSave = "save"
         self.didUpload = "               Upload \n (Save before uploading)"
-        self.didUploadAll = "Upload all"
+        self.didUploadAll = "          Upload all \n (Save before uploading)"
 
             #line 1
         lowLbl =       xlargeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
@@ -626,8 +619,8 @@ class Screen(StackLayout):
         MissHighDisp = smallSideLabel(str(self.team.MissHighGoal), rgb=[(120/255),(201/255),(40/255)]); displist.append(MissHighDisp)
 
             #line 4
-        incLow1 =      smallSideButton("-1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(-1, lowDisp)); displist.append(incLow1)
-        incLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(incLow3)
+        decLow1 =      smallSideButton("-1", rgb=[(14/255),(201/255),(170/255)]); decLow1.bind(on_release=lambda x: self.addLow(-1, lowDisp)); displist.append(decLow1)
+        decLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); decLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(decLow3)
         FoulLbl =      smallLabel("Fouls", rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulLbl)
         FoulDisp =     smallLabel(str(self.team.Foul), rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulDisp)
         TFoulLbl =     smallLabel("TFouls", rgb=[(28/255),0,(201/255)]); displist.append(TFoulLbl)#AtpGears is the varible for Miss Gears
@@ -640,8 +633,8 @@ class Screen(StackLayout):
         decMissHigh =  smallSideButton("-1", rgb=[(120/255),(201/255),(40/255)]); decMissHigh.bind(on_release=lambda x: self.addMissHigh(-1, MissHighDisp)); displist.append(decMissHigh)
 
             #line 5
-        incLow9 =     smallSideButton("-9", rgb=[(14/255),(201/255),(170/255)]); incLow9.bind(on_release=lambda x: self.addLow(-9, lowDisp)); displist.append(incLow9)
-        incLow15 =    smallSideButton("-15", rgb=[(14/255),(201/255),(170/255)]); incLow15.bind(on_release=lambda x: self.addLow(-15, lowDisp)); displist.append(incLow15)
+        decLow9 =     smallSideButton("-9", rgb=[(14/255),(201/255),(170/255)]); decLow9.bind(on_release=lambda x: self.addLow(-9, lowDisp)); displist.append(decLow9)
+        decLow15 =    smallSideButton("-15", rgb=[(14/255),(201/255),(170/255)]); decLow15.bind(on_release=lambda x: self.addLow(-15, lowDisp)); displist.append(decLow15)
         addFoul =     smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addFoul.bind(on_release=lambda x: self.Foul(1, FoulDisp)); displist.append(addFoul)
         decFoul =     smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decFoul.bind(on_release=lambda x: self.Foul(-1, FoulDisp)); displist.append(decFoul)
         addTFoul =    smallButton("+", rgb=[(28/255),0,(201/255)]); addTFoul.bind(on_release=lambda x: self.TFoul(1, TFoulDisp)); displist.append(addTFoul)
@@ -653,9 +646,9 @@ class Screen(StackLayout):
         addMissHigh1 = smallSideButton("-3", rgb=[(120/255),(201/255),(40/255)]); addMissHigh1.bind(on_release=lambda x: self.addMissHigh(-3, MissHighDisp)); displist.append(addMissHigh1)
 
             #line 6
-        decLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); decLow1.bind(on_release=lambda x: self.addLow(1, lowDisp)); displist.append(decLow1)
+        incLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(1, lowDisp)); displist.append(incLow1)
 
-        decLow5 =      smallSideButton("5", rgb=[(14/255),(201/255),(170/255)]); decLow5.bind(on_release=lambda x: self.addLow(5, lowDisp)); displist.append(decLow5)
+        incLow3 =      smallSideButton("5", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(3, lowDisp)); displist.append(incLow3)
         capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
         gearLbl =      smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
         gearDisp =     smallLabel(str(self.team.gears), rgb=[(28/255),(129/255),(201/255)]); displist.append(gearDisp)
@@ -667,8 +660,8 @@ class Screen(StackLayout):
 
 
             #line 7
-        decLow10 =     smallSideButton("10", rgb=[(14/255),(201/255),(170/255)]); decLow10.bind(on_release=lambda x: self.addLow(10, lowDisp)); displist.append(decLow10)
-        decLow20 =     smallSideButton("20", rgb=[(14/255),(201/255),(170/255)]); decLow20.bind(on_release=lambda x: self.addLow(20, lowDisp)); displist.append(decLow20)
+        incLow9 =     smallSideButton("9", rgb=[(14/255),(201/255),(170/255)]); incLow9.bind(on_release=lambda x: self.addLow(9, lowDisp)); displist.append(incLow9)
+        incLow15 =     smallSideButton("15", rgb=[(14/255),(201/255),(170/255)]); incLow15.bind(on_release=lambda x: self.addLow(15, lowDisp)); displist.append(incLow15)
         capDispAdd =   smallButton("+" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispAdd.bind(on_release=lambda x: self.addLow(self.team.capacity, lowDisp)); displist.append(capDispAdd)
         capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
         addGear =      smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addGear.bind(on_release=lambda x: self.addGear(1, gearDisp)); displist.append(addGear)
@@ -777,8 +770,7 @@ class Screen(StackLayout):
         high1 =      autonButton(txt="+1", rgb=[(28/255),(201/255),(40/255)]); high1.bind(on_release=lambda x: self.aAddHigh(1, highDisp)); displist.append(high1)
         #row 4
         low5 =        autonButton(txt="+5", rgb=[(14/255),(201/255),(170/255)]); low5.bind(on_release=lambda x: self.aAddLow(5, lowDisp)); displist.append(low5)
-        teamLbl1 = autonLabel(txt='', rgb=[0, 0, 0, 1]); displist.append(teamLbl1)
-        #self.timeLbl = autonButton(txt=self.can, rgb=[0, 0, 0]);self.timeLbl.bind(on_release=lambda x: self.Hi());displist.append(self.timeLbl)
+        self.timeLbl = autonButton(txt="", rgb=[0, 0, 0]);displist.append(self.timeLbl)
         high3 =       autonButton(txt="+3", rgb=[(28/255),(201/255),(40/255)]); high3.bind(on_release=lambda x: self.aAddHigh(3, highDisp)); displist.append(high3)
         #row 5
         lowm1 =   autonButton(txt="-1", rgb=[(14/255),(201/255),(170/255)]); lowm1.bind(on_release=lambda x: self.aAddLow(-1, lowDisp)); displist.append(lowm1)
@@ -900,7 +892,7 @@ class Screen(StackLayout):
 
         cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, atpGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         fetchoneList = list(cl.fetchone()) #grabbing all data from that giant sql statement above
-        '''cl.execute("SELECT * FROM `main`")
+        cl.execute("SELECT * FROM `main`")
         fetchall = cl.fetchall()
         fetchone = None
         for tup in fetchall: #workaround for a bug i was getting on the commented line below
@@ -910,12 +902,18 @@ class Screen(StackLayout):
                 debug("whoag they match, breaking")
                 fetchone = tup
                 break
-        cl.execute("SELECT scouterName, gears, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AtpGears, MissHighGoal, notes, Foul, TFoul, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        #next line used to reorder all values that it was getting from the database, but was replaced with SELECT *
+        cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
         if not fetchone:
             fetchone = cl.fetchone()
-        self.compatTableau(c, fetchone)
         debug(fetchone)
-        fetchoneList = list(fetchone) #IF THIS ERRORS THE PROGRAM COULD NOT FIND THE CORRECT DATA TO UPLOAD'''
+        #i was dumb and was taking a strange ordering from the above cl.execute. it changed and then i had to reorder all the compatTableau values
+        #it was easier to reorder them than to reformat the compatTableau, so this next line happens
+        fetchone = list(fetchone)
+        compatOrder = [fetchone[2]] + fetchone[4:10] + fetchone[12:13] + [fetchone[1], fetchone[0], fetchone[3]]
+        debug("compatTableau gets " + str(compatOrder))
+        #self.compatTableau(c, compatOrder)
+        fetchoneList = list(fetchone) #IF THIS ERRORS THE PROGRAM COULD NOT FIND THE CORRECT DATA TO UPLOAD
         debug("fetchoneList: "+str(fetchoneList))
 
         c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, self.team.event))
@@ -925,8 +923,31 @@ class Screen(StackLayout):
         elif test: #if the pi database is already set to take the data
             debug("THERE SHOULD BE DATA HERE: " + str(test))
 
-        c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AtpGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s, `Foul`=%s, `TFoul`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
-                  fetchoneList
+        orderFetch = [fetchoneList[2]] + fetchoneList[4:] + [fetchoneList[1]] + [fetchoneList[0]] + [fetchoneList[3]]
+        debug(orderFetch)
+
+        c.execute("""UPDATE `main` SET
+                     `scouterName`=%s,
+                     `gears`=%s,
+                     `highgoal`=%s,
+                     `lowgoal`=%s,
+                     `capacity`=%s,
+                     `pickupBalls`=%s,
+                     `pickupGears`=%s,
+                     `aHighgoal`=%s,
+                     `aLowgoal`=%s,
+                     `aGears`=%s,
+                     `aCrossed`=%s,
+                     `climbed`=%s,
+                     `team color`=%s,
+                     `AtpGears`=%s,
+                     `MissHighGoal`=%s,
+                     `notes`=%s,
+                     `position`=%s,
+                     `Foul`=%s,
+                     `TFoul`=%s
+                     WHERE `team`=%s AND `round`=%s AND `event`=%s;""",
+                  orderFetch
                   ) #send the pi the data
         d = self.team.getAttr()
         c.execute("SELECT * FROM `team` WHERE `team`=%s", (self.team.number,)) #get the constants table
@@ -953,7 +974,6 @@ class Screen(StackLayout):
                      `team` INTEGER,
                      `round` INTEGER,
                      `event` TEXT,
-                     `scouter` TEXT,
                      `phase` TEXT,
                      `action` TEXT,
                      `successes` INTEGER,
@@ -961,7 +981,6 @@ class Screen(StackLayout):
                      `accuracy` INTEGER,
                      `score` INTEGER
                      )""")
-        debug(self.team.event)
         debug(d)
         #order:
         #0 scouterName, 1 gears, 2 highgoal, 3 lowgoal, 4 capacity, 5 pickupBalls, 6 pickupGears, 7 aHighgoal, 8 aLowgoal, 9 aGears, 10 aCrossed,
@@ -969,16 +988,18 @@ class Screen(StackLayout):
 
         try: accuracy = int((d[2]/(d[2]+d[14]))*100)
         except ZeroDivisionError: accuracy = 0
-        c.execute("SELECT * FROM `tableau` WHERE team=? AND round=? AND event=?", (d[19], d[20], d[21]))
-        if c.fetchone: return
+        c.execute("SELECT * FROM `tableau` WHERE team=%s AND round=%s AND event=%s", (d[19], d[20], d[21]))
+        if c.fetchone(): return
         c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
                   (d[19], d[20], d[21], "teleop", "highgoal", d[2], d[14], accuracy, int(d[2]/3))
                   )
 
         c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
                   (d["number"], d["round"], d["event"], "teleop", "gears", d["gears"], d["atpGears"]-d["gears"])
-        '''c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
+                  )
+        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
                   (d[19], d[20], d[21], "teleop", "lowgoal", d[3], 0, 100, int(d[3]/9))
+                  )
 
         misses = d[13] - d[1]
         try: accuracy = int((d[1]/d[13])*100)
@@ -1001,7 +1022,7 @@ class Screen(StackLayout):
                   )
         c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
                   (d[19], d[20], d[21], "auton", "crossed line", d[10], int(not d[10]), 0, d[10]*10)
-                  )'''
+                  )
 
         #copy paste these when adding values
 

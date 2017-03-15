@@ -168,9 +168,11 @@ class Team:
         try: #getting all of the data out of the fetchone statement earlier
             #next 3 lines are compressed to save space and for no other reason, it is safe to replace the semicolons with newlines
 
-            self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]; self.pickupGears=data[9]
-            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working'); self.AtpGears=data[16]; self.MissHighGoal=data[17]
-            self.prevnotes=data[18]; self.posfin=data[19]; self.Foul=data[20]; self.TFoul=data[21]
+            self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]
+            self.pickupGears=data[9]
+            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working')
+            self.AtpGears=data[16]; self.MissHighGoal=data[17]
+            self.prevnotes=data[18]; self.posfin=data[19]; self.notes=data[20]; self.TFoul=data[21]
 
         except:
             debug("whoops, putdata got an error")
@@ -212,8 +214,6 @@ class Screen(StackLayout):
                                                         `scouterName` TEXT NOT NULL,
                                                         `event` INTEGER,
                                                         `gears` INTEGER,
-                                                        `Foul` INTEGER,
-                                                        `TFoul` INTEGER,
                                                         `highgoal` INTEGER,
                                                         `lowgoal` INTEGER,
                                                         `capacity` INTEGER,
@@ -229,6 +229,8 @@ class Screen(StackLayout):
                                                         `MissHighGoal` INTEGER,
                                                         `notes` TEXT,
                                                         `position` INTEGER,
+                                                        `Foul` INTEGER,
+                                                        `TFoul` INTEGER,
                                                         PRIMARY KEY(`team`,`round`))''')
         db.execute("CREATE TABLE IF NOT EXISTS `lastscouter` (`name` TEXT)")
         db.execute('''CREATE TABLE IF NOT EXISTS `team`(
@@ -587,7 +589,7 @@ class Screen(StackLayout):
         #reset menu button text
         self.didSave = "save"
         self.didUpload = "               Upload \n (Save before uploading)"
-        self.didUploadAll = "Upload all \n (Save before uploading)"
+        self.didUploadAll = "          Upload all \n (Save before uploading)"
 
             #line 1
         lowLbl =       xlargeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
@@ -763,7 +765,7 @@ class Screen(StackLayout):
         high1 =      autonButton(txt="+1", rgb=[(28/255),(201/255),(40/255)]); high1.bind(on_release=lambda x: self.aAddHigh(1, highDisp)); displist.append(high1)
         #row 4
         low5 =        autonButton(txt="+5", rgb=[(14/255),(201/255),(170/255)]); low5.bind(on_release=lambda x: self.aAddLow(5, lowDisp)); displist.append(low5)
-        self.timeLbl = autonButton(txt=self.can, rgb=[0, 0, 0]);self.timeLbl.bind(on_release=lambda x: self.Hi());displist.append(self.timeLbl)
+        self.timeLbl = autonButton(txt="", rgb=[0, 0, 0]);displist.append(self.timeLbl)
         high3 =       autonButton(txt="+3", rgb=[(28/255),(201/255),(40/255)]); high3.bind(on_release=lambda x: self.aAddHigh(3, highDisp)); displist.append(high3)
         #row 5
         lowm1 =   autonButton(txt="-1", rgb=[(14/255),(201/255),(170/255)]); lowm1.bind(on_release=lambda x: self.aAddLow(-1, lowDisp)); displist.append(lowm1)
@@ -913,8 +915,31 @@ class Screen(StackLayout):
         elif test: #if the pi database is already set to take the data
             debug("THERE SHOULD BE DATA HERE: " + str(test))
 
-        c.execute("UPDATE `main` SET `scouterName`=%s,`gears`=%s,`highgoal`=%s,`lowgoal`=%s,`capacity`=%s,`pickupBalls`=%s,`pickupGears`=%s,`aHighgoal`=%s,`aLowgoal`=%s,`aGears`=%s,`aCrossed`=%s,`climbed`=%s, `team color`=%s, `AtpGears`=%s, `MissHighGoal`=%s, `notes`=%s, `position`=%s, `Foul`=%s, `TFoul`=%s WHERE `team`=%s AND `round`=%s AND `event`=%s;",
-                  fetchoneList
+        orderFetch = [fetchoneList[2]] + fetchoneList[4:] + [fetchoneList[1]] + [fetchoneList[0]] + [fetchoneList[3]]
+        debug(orderFetch)
+
+        c.execute("""UPDATE `main` SET
+                     `scouterName`=%s,
+                     `gears`=%s,
+                     `highgoal`=%s,
+                     `lowgoal`=%s,
+                     `capacity`=%s,
+                     `pickupBalls`=%s,
+                     `pickupGears`=%s,
+                     `aHighgoal`=%s,
+                     `aLowgoal`=%s,
+                     `aGears`=%s,
+                     `aCrossed`=%s,
+                     `climbed`=%s,
+                     `team color`=%s,
+                     `AtpGears`=%s,
+                     `MissHighGoal`=%s,
+                     `notes`=%s,
+                     `position`=%s,
+                     `Foul`=%s,
+                     `TFoul`=%s
+                     WHERE `team`=%s AND `round`=%s AND `event`=%s;""",
+                  orderFetch
                   ) #send the pi the data
         d = self.team.getAttr()
         c.execute("SELECT * FROM `team` WHERE `team`=%s", (self.team.number,)) #get the constants table

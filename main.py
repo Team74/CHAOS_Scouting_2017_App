@@ -209,37 +209,37 @@ class Screen(StackLayout):
     def makeDB(self, db): #makes the database framework if it doesn't exist
         debug("makeDB()", "header")
         db.execute('''CREATE TABLE IF NOT EXISTS `main`(
-                                                        `round` INTEGER NOT NULL,
-                                                        `team` INTEGER NOT NULL,
-                                                        `scouterName` TEXT NOT NULL,
-                                                        `event` INTEGER,
-                                                        `gears` INTEGER,
-                                                        `highgoal` INTEGER,
-                                                        `lowgoal` INTEGER,
-                                                        `capacity` INTEGER,
-                                                        `pickupBalls` INTEGER,
-                                                        `pickupGears` INTEGER,
-                                                        `aHighgoal` INTEGER,
-                                                        `aLowgoal` INTEGER,
-                                                        `aGears` INTEGER,
-                                                        `aCrossed` INTEGER,
-                                                        `climbed` INTEGER,
-                                                        `team color` INTEGER,
-                                                        `AtpGears` INTEGER,
-                                                        `MissHighGoal` INTEGER,
-                                                        `notes` TEXT,
-                                                        `position` INTEGER,
-                                                        `Foul` INTEGER,
-                                                        `TFoul` INTEGER,
-                                                        PRIMARY KEY(`team`,`round`))''')
+                      `round` INTEGER NOT NULL,
+                      `team` INTEGER NOT NULL,
+                      `scouterName` TEXT NOT NULL,
+                      `event` INTEGER,
+                      `gears` INTEGER,
+                      `highgoal` INTEGER,
+                      `lowgoal` INTEGER,
+                      `capacity` INTEGER,
+                      `pickupBalls` INTEGER,
+                      `pickupGears` INTEGER,
+                      `aHighgoal` INTEGER,
+                      `aLowgoal` INTEGER,
+                      `aGears` INTEGER,
+                      `aCrossed` INTEGER,
+                      `climbed` INTEGER,
+                      `team color` INTEGER,
+                      `AtpGears` INTEGER,
+                      `MissHighGoal` INTEGER,
+                      `notes` TEXT,
+                      `position` INTEGER,
+                      `Foul` INTEGER,
+                      `TFoul` INTEGER
+                      )''')
         db.execute("CREATE TABLE IF NOT EXISTS `lastscouter` (`name` TEXT)")
         db.execute('''CREATE TABLE IF NOT EXISTS `team`(
-                                                        `team`INTEGER NOT NULL,
-                                                        `capacity` INTEGER,
-                                                        `pickupBalls` INTEGER,
-                                                        `pickupGears` INTEGER,
-                                                        PRIMARY KEY(`team`))''')
-        db.execute("CREATE TABLE IF NOT EXISTS `events` (`currentEvent`)")
+                      `team`INTEGER NOT NULL,
+                      `capacity` INTEGER,
+                      `pickupBalls` INTEGER,
+                      `pickupGears` INTEGER,
+                      PRIMARY KEY(`team`))''')
+        db.execute("CREATE TABLE IF NOT EXISTS `events` (`currentEvent` TEXT)")
         debug("makeDB() end", "header")
 
     def getlastscouter(self, default=''): #returns last scouter it remembers

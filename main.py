@@ -981,9 +981,9 @@ class Screen(StackLayout):
         #i was dumb and was taking a strange ordering from the above cl.execute. it changed and then i had to reorder all the compatTableau values
         #it was easier to reorder them than to reformat the compatTableau, so this next line happens
         fetchone = list(fetchone)
-        compatOrder = [fetchone[2]] + fetchone[4:10] + fetchone[12:13] + [fetchone[1], fetchone[0], fetchone[3]]
+        compatOrder = [fetchone[2]] + fetchone[4:] + [fetchone[1], fetchone[0], fetchone[3]]
         debug("compatTableau gets " + str(compatOrder))
-        #self.compatTableau(c, compatOrder)
+        self.compatTableau(c, compatOrder)
         fetchoneList = list(fetchone) #IF THIS ERRORS THE PROGRAM COULD NOT FIND THE CORRECT DATA TO UPLOAD
         debug("fetchoneList: "+str(fetchoneList))
 
@@ -1039,7 +1039,7 @@ class Screen(StackLayout):
         debug("upload() end")
         self.scrExit()
 
-    def compatTableau(self, c, d):
+    def compatTableau(self, c, d, mode="INSERT"):
         debug("compatTableau", "title")
         c.execute("""CREATE TABLE IF NOT EXISTS `tableau` (
                      `team` INTEGER,
@@ -1054,46 +1054,45 @@ class Screen(StackLayout):
                      )""")
         debug(d)
         #order:
-        #0 scouterName, 1 gears, 2 highgoal, 3 lowgoal, 4 capacity, 5 pickupBalls, 6 pickupGears, 7 aHighgoal, 8 aLowgoal, 9 aGears, 10 aCrossed,
-        #11 climbed, 12 team color, 13 AtpGears, 14 MissHighGoal, 15 notes, 16 Foul, 17 TFoul, 18 position, 19 team, 20 round, 21 event
+        #0 scoutername
+        debug("gears        "+str(d[1]))
+        debug("highgoal     "+str(d[2]))
+        debug("lowgoal      "+str(d[3]))
+        #4 capacity, 5 pickupBalls, 6 pickupGears
+        debug("aHighgoal    "+str(d[7]))
+        debug("aLowgoal     "+str(d[8]))
+        #9 aGears, 10 aCrossed
+        debug("climbed      "+str(d[11]))
+        #12 team color
+        debug("AtpGears     "+str(d[13]))
+        debug("MissHighGoal "+str(d[14]))
+        #15 notes, 16 Foul, 17 TFoul, 18 position
+        debug("team         "+str(d[19]))
+        debug("round        "+str(d[20]))
+        debug("event        "+str(d[21]))
 
         try: accuracy = int((d[2]/(d[2]+d[14]))*100)
         except ZeroDivisionError: accuracy = 0
         c.execute("SELECT * FROM `tableau` WHERE team=%s AND round=%s AND event=%s", (d[19], d[20], d[21]))
-        if c.fetchone(): return
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
-                  (d[19], d[20], d[21], "teleop", "highgoal", d[2], d[14], accuracy, int(d[2]/3))
-                  )
+        if c.fetchone():
+            mode = "UPDATE `tableau` SET team=%s, round=%s, event=%s, phase=%s, action=%s, successes=%s, misses=%s, accuracy=%s, score=%s WHERE team=%s AND round=%s AND event=%s"
+            appendix = [d[19], d[20], d[21]]
+        else:
+            mode = "INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+            appendix = [ ]
+        debug(mode )
 
-        c.execute("INSERT INTO `tableau` (`team`, `round`, `event`, `phase`, `action`, `successes`, `misses`) VALUES (%s,%s,%s,%s,%s,%s,%s);",
-                  (d["number"], d["round"], d["event"], "teleop", "gears", d["gears"], d["atpGears"]-d["gears"])
-                  )
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
-                  (d[19], d[20], d[21], "teleop", "lowgoal", d[3], 0, 100, int(d[3]/9))
-                  )
-
+        c.execute(mode, [d[19], d[20], d[21], "teleop", "highgoal", d[2], d[14], accuracy, int(d[2]/3)] + appendix)
+        c.execute(mode, [d[19], d[20], d[21], "teleop", "lowgoal", d[3], 0, 100, int(d[3]/9)] + appendix)
         misses = d[13] - d[1]
         try: accuracy = int((d[1]/d[13])*100)
         except ZeroDivisionError: accuracy = 0
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
-                  (d[19], d[20], d[21], "teleop", "gears", d[1], misses, accuracy, int(d[1]))
-                  )
-
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
-                  (d[19], d[20], d[21], "teleop", "climbed", d[11], int(not d[11]), d[11]*100, d[11]*50)
-                  )
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
-                  (d[19], d[20], d[21], "auton", "highgoal", d[7], 0, 0, int(d[7]))
-                  )
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
-                  (d[19], d[20], d[21], "auton", "lowgoal", d[8], 0, 0, int(d[8]/3))
-                  )
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
-                  (d[19], d[20], d[21], "auton", "gears", d[9], 0, 0, int(d[9]))
-                  )
-        c.execute("INSERT INTO tableau (team, round, event, phase, action, successes, misses, accuracy, score) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);",
-                  (d[19], d[20], d[21], "auton", "crossed line", d[10], int(not d[10]), 0, d[10]*10)
-                  )
+        c.execute(mode, [d[19], d[20], d[21], "teleop", "gears", d[1], misses, accuracy, int(d[1])] + appendix)
+        c.execute(mode, [d[19], d[20], d[21], "teleop", "climbed", d[11], int(not d[11]), d[11]*100, d[11]*50] + appendix)
+        c.execute(mode, [d[19], d[20], d[21], "auton", "highgoal", d[7], 0, 0, int(d[7])] + appendix)
+        c.execute(mode, [d[19], d[20], d[21], "auton", "lowgoal", d[8], 0, 0, int(d[8]/3)] + appendix)
+        c.execute(mode, [d[19], d[20], d[21], "auton", "gears", d[9], 0, 0, int(d[9])] + appendix)
+        c.execute(mode, [d[19], d[20], d[21], "auton", "crossed line", d[10], int(not d[10]), 0, d[10]*10] + appendix)
 
         #copy paste these when adding values
 

@@ -9,6 +9,11 @@ from kivy.graphics import BorderImage
 from kivy.properties import *
 from kivy.lang import Builder
 
+from kivy.properties import NumericProperty, ReferenceListProperty,\
+    ObjectProperty
+from kivy.vector import Vector
+from kivy.clock import Clock
+
 import signal
 import sys
 import threading
@@ -122,6 +127,8 @@ def autonButton(txt, rgb=[.5,.5,.5]):
     return cButton(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
 def smallautonButton(txt, rgb=[.5,.5,.5]):
     return cButton(text=str(txt), rgb=rgb, size_hint=((1/6), (1/6)))
+def smallautonLabel(txt, rgb=[.5,.5,.5]):
+    return cLabel(text=str(txt), rgb=rgb, size_hint=((1/6), (1/6)))
 
 class Team:
     def __init__(self, number):
@@ -199,10 +206,74 @@ class Team:
             debug('ok')
         debug("putCData() end", "header")
 
+class PongPaddle(Widget):
+    score = NumericProperty(0)
+
+    def bounce_ball(self, ball):
+        if self.collide_widget(ball):
+            vx, vy = ball.velocity
+            offset = (ball.center_y - self.center_y) / (self.height / 2)
+            bounced = Vector(-1 * vx, vy)
+            vel = bounced * 1.15
+            if vel.length() >= 88:
+                vel = bounced * 1
+            ball.velocity = vel.x, vel.y + offset
+            print (vel.length())
+
+class PongBall(Widget):
+    velocity_x = NumericProperty(0)
+    velocity_y = NumericProperty(0)
+    velocity = ReferenceListProperty(velocity_x, velocity_y)
+
+    def move(self):
+        self.pos = Vector(*self.velocity) + self.pos
+
+class PongGame(Widget):
+    ball = ObjectProperty(None)
+    player1 = ObjectProperty(None)
+    player2 = ObjectProperty(None)
+
+    def serve_ball(self, vel=(4, 0)):
+        self.ball.center = self.center
+        self.ball.velocity = vel
+
+    def update(self, dt):
+        self.ball.move()
+
+        # bounce of paddles
+        self.player1.bounce_ball(self.ball)
+        self.player2.bounce_ball(self.ball)
+
+        # bounce ball off bottom or top
+        if (self.ball.y < self.y) or (self.ball.top > self.top):
+            self.ball.velocity_y *= -1
+
+        # went of to a side to score point?
+        if self.ball.x < self.x:
+            self.player2.score += 1
+            self.serve_ball(vel=(4, 0))
+        if self.ball.x > self.width:
+            self.player1.score += 1
+            self.serve_ball(vel=(-4, 0))
+
+    def on_touch_move(self, touch):
+        if touch.x < self.width / 3:
+            self.player1.center_y = touch.y
+        if touch.x > self.width - self.width / 3:
+            self.player2.center_y = touch.y
+
+class PongApp(App):
+    def build(self):
+        game = PongGame()
+        game.serve_ball()
+        Clock.schedule_interval(game.update, 1.0 / 60.0)
+        return game
+
 #main class, overwrites stacklayout layout from kivy
 class Screen(StackLayout):
     prev = ''
     #save above
+
     def __init__(self, **kwargs):
 
         super(Screen, self).__init__(**kwargs)
@@ -212,7 +283,6 @@ class Screen(StackLayout):
     def makeDB(self, db): #makes the database framework if it doesn't exist
         debug("makeDB()", "header")
         db.execute('''CREATE TABLE IF NOT EXISTS `main`(
-
                       `round` INTEGER NOT NULL,
                       `team` INTEGER NOT NULL,
                       `scouterName` TEXT NOT NULL,
@@ -494,6 +564,8 @@ class Screen(StackLayout):
         self.team.TFoul += count
         if self.team.TFoul <= 0:
             self.team.TFoul = 0
+        if self.team.TFoul == 18:
+            PongApp().run()
         widg.text = str(self.team.TFoul)
     def addatpGear(self, count, widg): #add to attempted gears
         debug("addatpGear")
@@ -606,7 +678,7 @@ class Screen(StackLayout):
             #line 2
         lowLbl2=       xlargeSideLabel("", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl2)
         checkClimb1 =   xlargeButton("climbed" if self.team.climb else "didn't climb", rgb=[(201/255),(28/255),(147/255)]); checkClimb1.bind(on_release=lambda x: self.climbed(checkClimb1)); displist.append(checkClimb1)
-        teamDisp2 =    xlargeLabel("" + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp2)
+        teamDisp2 =    xlargeLabel("Round " + str(self.team.round), rgb=[0, 0, 0, 1]); displist.append(teamDisp2)
         dummyLbl123 =  xcLabel(text="Event " + str(self.team.event), rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl123)
         highLbl2 =     xlargeSideLabel("Hit        Miss", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl2) #cheesing so that we don't have to make two labels
 
@@ -648,12 +720,10 @@ class Screen(StackLayout):
 
             #line 6
         incLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(1, lowDisp)); displist.append(incLow1)
-
-        incLow3 =      smallSideButton("5", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(3, lowDisp)); displist.append(incLow3)
+        incLow3 =      smallSideButton("3", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(3, lowDisp)); displist.append(incLow3)
         capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
         gearLbl =      smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
         gearDisp =     smallLabel(str(self.team.gears), rgb=[(28/255),(129/255),(201/255)]); displist.append(gearDisp)
-
         AptGearLbl =   smallLabel("AtpGears", rgb=[(28/255),0,(201/255)]); displist.append(AptGearLbl)#AtpGears is the varible for Miss Gears
         AptGearDisp =  smallLabel(str(self.team.AtpGears), rgb=[(28/255),0,(201/255)]); displist.append(AptGearDisp)
         addHigh2 =     smallSideButton("+1", rgb=[(28/255),(201/255),(40/255)]); addHigh2.bind(on_release=lambda x: self.addHigh(1, highDisp)); displist.append(addHigh2)
@@ -739,11 +809,11 @@ class Screen(StackLayout):
         notesText = str(self.team.prevnotes) #puts original notes back in
 
         #row 1
-        cancel = cButton(text="Cancel", size_hint=(1, .1)); cancel.bind(on_release=self.scrMain if self.camefrom == "tele" else self.scrAuton); displist.append(cancel)
+        save = cButton(text="Save", size_hint=(1, .1)); save.bind(on_release=lambda x: self.savednotes(notes)); displist.append(save)
         #row 2
         notes = TextInput(text=str(self.team.prevnotes), multiline=True, size_hint=(1, .8)); notes.bind(on_text_validate=lambda x: self.scrnotes); displist.append(notes)
         #row 3
-        save = cButton(text="Save", size_hint=(1, .1)); save.bind(on_release=lambda x: self.savednotes(notes)); displist.append(save)
+        cancel = cButton(text="Cancel", size_hint=(1, .1)); cancel.bind(on_release=self.scrMain if self.camefrom == "tele" else self.scrAuton); displist.append(cancel)
 
         for widg in displist:
             self.add_widget(widg)
@@ -758,7 +828,8 @@ class Screen(StackLayout):
 
         #row 1
         lowLbl =  autonLabel(txt="Low", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
-        teamLbl = autonLabel(txt=self.team.number, rgb=[0, 0, 0, 1]); displist.append(teamLbl)
+        teamLbl = smallautonLabel(txt="Team " + self.team.number, rgb=[0, 0, 0, 1]); displist.append(teamLbl)
+        roundLbl = smallautonLabel(txt='Round ' + self.team.round, rgb=[0, 0, 0, 1]); displist.append(roundLbl)
         highLbl = autonLabel(txt="High", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl)
         #row 2
         lowDisp =  autonLabel(txt=self.team.aLowgoal, rgb=[(14/255),(201/255),(170/255)]); displist.append(lowDisp)
@@ -799,7 +870,6 @@ class Screen(StackLayout):
         for widg in displist:
             self.add_widget(widg)
         debug("scrEvent end", "title")
-
 
     def areYouSure(self, camefrom=None, obj=None): #prompt for leaving saved data
         debug("areYouSure()", "title")
@@ -1028,7 +1098,6 @@ class Screen(StackLayout):
         #copy paste these when adding values
 
         debug("compatTableau end", "title")
-
 
 #lsl - 15.5, ll - 23, ssl - 7.75, sl - 11.5
 #sea foam green: , rgb=[(14/255),(201/255),(170/255)] :  low goal

@@ -541,7 +541,6 @@ class Screen(StackLayout):
         debug("setTeam() end", "title")
         self.scrMain()
 
-    def handleEvent(self, obj=None):
         eventname = self.eventTxt.text
         db = sqlite3.connect('rounddat.db')
         db.execute("INSERT INTO `events`(`currentEvent`) VALUES (?)", (eventname,))

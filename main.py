@@ -23,6 +23,8 @@ import time
 import os
 import random
 
+CURRENT_EVENT = "test"
+
 #mysql pi ip: 10.111.49.41
 
 DEBUG = 1
@@ -64,6 +66,8 @@ Builder.load_string("""
             source: "/colors/background.jpg"
             pos: self.x - 1, self.y - 1
             size: self.width + 2, self.height + 2
+
+#:kivy 1.0.9
 
 <PongBall>:
     size: 50, 50
@@ -114,7 +118,6 @@ Builder.load_string("""
         id: player_right
         x: root.width-self.width
         center_y: root.center_y
-
 """)
 
 #Overwriting normal widget classes to make them pretty
@@ -222,6 +225,7 @@ class Team:
         debug("getAttr() end", "header 2")
 
     def putData(self, data): #puts the data from the local database into the object
+        mapping = {0:'none', 1:'far', 2:'mid', 3:'boi', 'none':0, 'far':1, 'mid':2, 'boi':3}
         debug("putData()", "header")
         debug(data)
         data = list(data)
@@ -231,14 +235,14 @@ class Team:
                 data[i] = 0
         debug(str(len(data)))
         try: #getting all of the data out of the fetchone statement earlier
-            #next 3 lines are compressed to save space and for no other reason, it is safe to replace the semicolons with newlines
+            #next few lines are compressed to save space and for no other reason, it is safe to replace the semicolons with newlines
 
             self.gears=data[4]; self.highgoal=data[5]; self.lowgoal=data[6]; self.climb=data[14]; self.capacity=data[7]; self.pickupBalls=data[8]
-            self.pickupGears=data[9]
-            self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]; debug('ooOOOooOOO working')
-            self.AtpGears=data[16]; self.MissHighGoal=data[17]
-            self.prevnotes=data[18]; self.posfin=data[19]; self.notes=data[20]; self.TFoul=data[21]
-
+            self.pickupGears=data[9]; self.aLowgoal=data[11]; self.aHighgoal=data[10]; self.gfin=data[12]; self.aCrossed=data[13]; self.color=data[15]
+            debug('ooOOOooOOO working')
+            self.AtpGears=data[16]; self.MissHighGoal=data[17]; self.prevnotes=data[18]; self.posfin=data[19]; self.Foul=data[20]
+            self.TFoul=data[21]; self.wg=mapping[data[22]]
+            print(self.wg)
         except:
             debug("whoops, putdata got an error")
             debug("heres data stuff: %s" % data)
@@ -288,11 +292,17 @@ class PongGame(Widget):
     player1 = ObjectProperty(None)
     player2 = ObjectProperty(None)
 
+    def __init__(self, **kwargs):
+        self.stop = False
+        super(PongGame, self).__init__(**kwargs)
+
     def serve_ball(self, vel=(4, 0)):
         self.ball.center = self.center
         self.ball.velocity = vel
 
     def update(self, dt):
+        if self.stop: return
+
         self.ball.move()
 
         # bounce of paddles
@@ -306,10 +316,10 @@ class PongGame(Widget):
         # went of to a side to score point?
         if self.ball.x < self.x:
             self.player2.score += 1
-            self.serve_ball(vel=(4, 0))
+            self.stop = True
         if self.ball.x > self.width:
             self.player1.score += 1
-            self.serve_ball(vel=(-4, 0))
+            self.stop = True
 
     def on_touch_move(self, touch):
         if touch.x < self.width / 3:
@@ -317,16 +327,11 @@ class PongGame(Widget):
         if touch.x > self.width - self.width / 3:
             self.player2.center_y = touch.y
 
-class PongApp(App):
-    def build(self):
-        game = PongGame()
-        game.serve_ball()
-        Clock.schedule_interval(game.update, 1.0 / 60.0)
-        return game
-
 #main class, overwrites stacklayout layout from kivy
 class Screen(StackLayout):
     prev = ''
+    mapping = {0:'none', 1:'far', 2:'mid', 3:'boi', 'none':0, 'far':1, 'mid':2, 'boi':3}
+
     #save above
 
     def __init__(self, **kwargs):
@@ -334,6 +339,9 @@ class Screen(StackLayout):
         super(Screen, self).__init__(**kwargs)
         self.lastLowVal = 0
         self.choose()
+
+        self.konami = []
+        self.canPong = True
 
     def makeDB(self, db): #makes the database framework if it doesn't exist
         debug("makeDB()", "header")
@@ -359,7 +367,8 @@ class Screen(StackLayout):
                       `notes` TEXT,
                       `position` INTEGER,
                       `Foul` INTEGER,
-                      `TFoul` INTEGER
+                      `TFoul` INTEGER,
+                      `AGear Pos` TEXT
                       )''')
         db.execute("CREATE TABLE IF NOT EXISTS `lastscouter` (`name` TEXT, `color` INTEGER)")
         db.execute('''CREATE TABLE IF NOT EXISTS `team`(
@@ -471,30 +480,6 @@ class Screen(StackLayout):
         cl = dbl.cursor()
         self.makeDB(cl)
 
-        cl.execute("CREATE TABLE IF NOT EXISTS `events` (`currentEvent` INTEGER)")
-        try: #if connected to the internet, look for the event name in the pi database
-            db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi database
-            dbtype = "mysql"
-        except: #otherwise, take the event from the local database
-            db = sqlite3.connect('rounddat.db')
-            dbtype = "sqlite"
-
-        debug("db is a %s connection" % dbtype)
-        c = db.cursor()
-        c.execute("SELECT `currentEvent` FROM `events`")
-        try:
-            self.team.event = c.fetchone()[0] #TODO: catch error here and ask user to enter an event name
-        except:
-            c.close()
-            db.close()
-            cl.close()
-            dbl.close()
-            self.scrEvent()
-            return
-        debug(self.team.event)
-        if dbtype == "mysql":
-            debug("putting events into local DB")
-            cl.execute("INSERT INTO `events`(`currentEvent`) VALUES (?)", (self.team.event,))
         self.team.prevnotes = "" #reinitialize notes??? may need to be removed
 
         cl.execute("SELECT * FROM `team` WHERE `team`=?", (self.team.number,))
@@ -506,18 +491,17 @@ class Screen(StackLayout):
             self.team.putCData(cl)
 
         try: #remake the database if not found
-            cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event)) #this will error if the main table isnt there
+            cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, CURRENT_EVENT)) #this will error if the main table isnt there
             found = cl.fetchone()
         except:
             debug("had to remake db")
             self.makeDB(cl)
             found = False
-            pass
         if not found:
             debug("putting data into main...")
-            dbl.execute("INSERT INTO `main`(`round`,`team`,`scouterName`,`event`) VALUES (?,?,?,?);", (self.team.round, self.team.number, self.team.scouterName, self.team.event))
-            debug("round: %s, team: %s, scouter: %s, event: %s", (round, team, name, self.team.event))
-            dbl.execute("UPDATE `main` SET `scouterName`=? WHERE `round`=? AND `team`=? AND `event`=?", (self.team.scouterName, self.team.round, self.team.number, self.team.event))
+            dbl.execute("INSERT INTO `main`(`round`,`team`,`scouterName`,`event`) VALUES (?,?,?,?);", (self.team.round, self.team.number, self.team.scouterName, CURRENT_EVENT))
+            debug("round: %s, team: %s, scouter: %s, event: %s", (round, team, name, CURRENT_EVENT))
+            dbl.execute("UPDATE `main` SET `scouterName`=? WHERE `round`=? AND `team`=? AND `event`=?", (self.team.scouterName, self.team.round, self.team.number, CURRENT_EVENT))
             dbl.commit()
         else:
             self.team.putData(found)
@@ -562,22 +546,20 @@ class Screen(StackLayout):
             self.team.g = 'missed the gear'
             self.team.gcolor = [(235/255), (61/255), (255/255)]
             self.team.gfing = 'never attempted the gear'
+        self.setAGP()
 
         debug(self.team.color)
-        c.close()
         cl.close()
-        db.close()
         dbl.close()
         debug("setTeam() end", "title")
         self.scrMain()
 
-    def handleEvent(self, obj=None):
-        eventname = self.eventTxt.text
+        eventname = CURRENT_EVENT
         db = sqlite3.connect('rounddat.db')
         db.execute("INSERT INTO `events`(`currentEvent`) VALUES (?)", (eventname,))
         db.commit()
         db.close()
-        self.setTeam("came from handleEvent", None, None)
+        #self.setTeam("came from handleEvent", None, None)
         return
 
     #the following functions are called by the buttons on the interface when pressed
@@ -588,6 +570,12 @@ class Screen(StackLayout):
         if self.team.lowgoal <= 0:
             self.team.lowgoal = 0
         widg.text = str(self.team.lowgoal)
+        if count > 0: self.konami.append("up")
+        if count < 0: self.konami.append("down")
+        debug(self.konami[-10:])
+        if self.konami[-10:] == ["a", "b", "right", "left", "right", "left", "down", "down", "up", "up"]:
+            self.canPong = not self.canPong
+            debug("can pong: " + str(self.canPong))
     def addHigh(self, count, widg): #add to high goals scored
         debug("addHigh()")
         self.reloadList = [widg]
@@ -595,6 +583,7 @@ class Screen(StackLayout):
         if self.team.highgoal <= 0:
             self.team.highgoal = 0
         widg.text = str(self.team.highgoal)
+        if count > 0: self.konami.append("left")
     def addMissHigh(self, count, widg): #add to missed high goals
         debug("addMissHigh()")
         self.reloadList = [widg]
@@ -602,6 +591,7 @@ class Screen(StackLayout):
         if self.team.MissHighGoal <= 0:
             self.team.MissHighGoal = 0
         widg.text = str(self.team.MissHighGoal)
+        if count > 0: self.konami.append("right")
     def addGear(self, count, widg): #add to gears scored
         debug("addGear()")
         self.reloadList = [widg]
@@ -609,6 +599,18 @@ class Screen(StackLayout):
         if self.team.gears <= 0:
             self.team.gears = 0
         widg.text = str(self.team.gears)
+        if count > 0: self.konami.append("a")
+        if count < 0: self.konami.append("b")
+        debug(self.konami[-10:])
+        try:
+            if self.konami[-10:] == ["up", "up", "down", "down", "left", "right", "left", "right", "b", "a"] and self.canPong:
+                game = PongGame()
+                game.serve_ball()
+                Clock.schedule_interval(game.update, 1.0 / 60.0)
+                self.clear_widgets()
+                self.add_widget(game)
+        except IndexError:
+            self.konami = []
     def Foul(self, count, widg): #add to the foul count
         debug("Foul()")
         self.reloadList = [widg]
@@ -622,8 +624,6 @@ class Screen(StackLayout):
         self.team.TFoul += count
         if self.team.TFoul <= 0:
             self.team.TFoul = 0
-        if self.team.TFoul == 18:
-            PongApp().run()
         widg.text = str(self.team.TFoul)
     def addatpGear(self, count, widg): #add to attempted gears
         debug("addatpGear")
@@ -696,8 +696,13 @@ class Screen(StackLayout):
         self.reloadList = [widg]
         self.team.wg = self.team.wg + 1
         debug(self.team.wgn)
+        self.mapping = {0:'n', 1:'f', 2:'m', 3:'b'}
         if self.team.wg >= 4:
             self.team.wg = self.team.wg - 4
+        self.setAGP()
+
+        self.scrAuton()
+    def setAGP(self):
         if self.team.wg == 1:
             self.team.w = 'far'
             self.team.wcolor = [(117/255), (117/255), (117/255)]
@@ -714,8 +719,7 @@ class Screen(StackLayout):
             self.team.w = 'no gear auton'
             self.team.wcolor = [0, 0, 0,]
             self.team.wgn ='far'
-
-        self.scrAuton()
+        print(self.team.wg)
 
     #main functions (displays)
     def scrMain(self, obj=None, reload=False): #teleop scr
@@ -729,17 +733,17 @@ class Screen(StackLayout):
 
             #line 1
         lowLbl =       xlargeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
-        dummyLbl =     xcLabel(text="", rgb=[0, (200/255), 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl)
+        dummyLbl =     xlargeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl)
         #self.timeLbl = xlargeButton(txt=str(self.can), rgb=[0, 0, 0]);self.timeLbl.bind(on_release=lambda x: self.Hi());displist.append(self.timeLbl)
         teamDisp =     xlargeLabel("Team " + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp)
-        dummyLbl2 =    xcLabel(text="Scouter " + str(self.team.scouterName), rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl2)
+        dummyLbl2 =    xlargeLabel("Scouter " + str(self.team.scouterName), rgb=[0, 0, 0, 1]); displist.append(dummyLbl2)
         highLbl =      xlargeSideLabel("High goal", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl) #cheesing so that we don't have to make two labels
 
             #line 2
         lowLbl2=       xlargeSideLabel("", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl2)
         dummyLbl241 =  xcLabel(text="", rgb=[0, 0, 0], size_hint=(.23, .075)); displist.append(dummyLbl241)
         teamDisp2 =    xlargeLabel("Round " + str(self.team.round), rgb=[0, 0, 0, 1]); displist.append(teamDisp2)
-        dummyLbl123 =  xcLabel(text="Event " + str(self.team.event), rgb=[0, 0, 0, 1], size_hint=(.23, .075)); displist.append(dummyLbl123)
+        dummyLbl123 =  xlargeLabel("Event " + str(CURRENT_EVENT), rgb=[0, 0, 0, 1]); displist.append(dummyLbl123)
         highLbl2 =     xlargeSideLabel("Hit        Miss", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl2) #cheesing so that we don't have to make two labels
 
             #line 3
@@ -784,8 +788,8 @@ class Screen(StackLayout):
         capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
         gearLbl =      smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
         gearDisp =     smallLabel(str(self.team.gears), rgb=[(28/255),(129/255),(201/255)]); displist.append(gearDisp)
-        AtpGearLbl =   smallLabel("AtpGears", rgb=[(28/255),0,(201/255)]); displist.append(AtpGearLbl)#AtpGears is the varible for Miss Gears
-        AtpGearDisp =  smallLabel(str(self.team.AtpGears), rgb=[(28/255),0,(201/255)]); displist.append(AtpGearDisp)
+        atpGearLbl =   smallLabel("AtpGears", rgb=[(28/255),0,(201/255)]); displist.append(atpGearLbl)#AtpGears is the varible for Miss Gears
+        atpGearDisp =  smallLabel(str(self.team.AtpGears), rgb=[(28/255),0,(201/255)]); displist.append(atpGearDisp)
         addHigh2 =     smallSideButton("+1", rgb=[(28/255),(201/255),(40/255)]); addHigh2.bind(on_release=lambda x: self.addHigh(1, highDisp)); displist.append(addHigh2)
         addMissHigh2 = smallSideButton("+1", rgb=[(120/255),(201/255),(40/255)]); addMissHigh2.bind(on_release=lambda x: self.addMissHigh(1, MissHighDisp)); displist.append(addMissHigh2)
 
@@ -888,8 +892,8 @@ class Screen(StackLayout):
 
         #row 1
         lowLbl =  autonLabel(txt="Low", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
-        teamLbl = smallautonLabel(txt="Team " + self.team.number, rgb=[0, 0, 0, 1]); displist.append(teamLbl)
-        roundLbl = smallautonLabel(txt='Round ' + self.team.round, rgb=[0, 0, 0, 1]); displist.append(roundLbl)
+        teamLbl = smallautonLabel(txt="Team " + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamLbl)
+        roundLbl = smallautonLabel(txt='Round ' + str(self.team.round), rgb=[0, 0, 0, 1]); displist.append(roundLbl)
         highLbl = autonLabel(txt="High", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl)
         #row 2
         lowDisp =  autonLabel(txt=self.team.aLowgoal, rgb=[(14/255),(201/255),(170/255)]); displist.append(lowDisp)
@@ -964,13 +968,13 @@ class Screen(StackLayout):
         db = sqlite3.connect("rounddat.db") #connect to local db
         d = self.team.getAttr() #get information dict from self.team
         debug(d)
-        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`Foul`=?,`TFoul`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AtpGears`=?, `MissHighGoal`=?, `notes`=?, `position`=? WHERE `team`=? AND `round`=? AND `event`=?;",
-                   (d["highgoal"],d["lowgoal"],d["gears"],d["Foul"],d["TFoul"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["AtpGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],d["number"],d["round"],d["event"])
+        db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`Foul`=?,`TFoul`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AtpGears`=?, `MissHighGoal`=?, `notes`=?, `position`=?, `AGear Pos`=? WHERE `team`=? AND `round`=? AND `event`=?;",
+                   (d["highgoal"],d["lowgoal"],d["gears"],d["Foul"],d["TFoul"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["AtpGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],self.mapping[d["wg"]],d["number"],d["round"],CURRENT_EVENT)
                    ) #sql wizardry, simply takes out all of the stuff stored in d (data) and puts it in its respective places
         db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number)) #updating the constants storage table
         c = db.cursor()
-        c.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event)) #just to check
+        c.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, CURRENT_EVENT)) #just to check
         debug(c.fetchone())
         db.commit()
         db.close()
@@ -984,13 +988,15 @@ class Screen(StackLayout):
             db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi
         except:
             debug("unable to connect to database, aborting upload")
-            self.didAupload = "Failed to connect to the database"
+            self.didUploadAll = "Failed to connect to the database."
             self.scrExit()
             return
         dbl = sqlite3.connect("rounddat.db")
         cl = dbl.cursor()
         cl.execute("SELECT team, round, scouterName FROM `main`")
-        for fetchone in cl.fetchall():
+        fetchall = cl.fetchall()
+        debug(fetchall)
+        for fetchone in fetchall:
             debug(fetchone[0])
             debug(fetchone[1])
             self.setTeam(fetchone[0], fetchone[1], fetchone[2])
@@ -1006,7 +1012,7 @@ class Screen(StackLayout):
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db")
         cl = dbl.cursor()
-        c.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AtpGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        c.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, AtpGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, CURRENT_EVENT))
         data = c.fetchone()
 
     def upload(self, obj=None): #uploads loaded data into the pi database
@@ -1022,20 +1028,20 @@ class Screen(StackLayout):
         dbl = sqlite3.connect("rounddat.db") #connect to local db
         cl = dbl.cursor()
 
-        cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, atpGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        cl.execute("SELECT scouterName, gears, Foul, TFoul, highgoal, lowgoal, capacity, pickupBalls, pickupGears, aHighgoal, aLowgoal, aGears, aCrossed, climbed, `team color`, atpGears, MissHighGoal, notes, position, team, round, event FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, CURRENT_EVENT))
         fetchoneList = list(cl.fetchone()) #grabbing all data from that giant sql statement above
         cl.execute("SELECT * FROM `main`")
         fetchall = cl.fetchall()
         fetchone = None
         for tup in fetchall: #workaround for a bug i was getting on the commented line below
-            debug("Target round: %s, number: %s, event: %s" % (self.team.round, self.team.number, self.team.event))
+            debug("Target round: %s, number: %s, event: %s" % (self.team.round, self.team.number, CURRENT_EVENT))
             debug("Actual round: %s, number: %s, event: %s" % (tup[0], tup[1], tup[3]))
-            if tup[0] == self.team.round and tup[1] == self.team.number and tup[3] == self.team.event:
+            if tup[0] == self.team.round and tup[1] == self.team.number and tup[3] == CURRENT_EVENT:
                 debug("whoag they match, breaking")
                 fetchone = tup
                 break
         #next line used to reorder all values that it was getting from the database, but was replaced with SELECT *
-        cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, self.team.event))
+        cl.execute("SELECT * FROM `main` WHERE `round`=? AND `team`=? AND `event`=?", (self.team.round, self.team.number, CURRENT_EVENT))
         if not fetchone:
             fetchone = cl.fetchone()
         debug(fetchone)
@@ -1044,14 +1050,14 @@ class Screen(StackLayout):
         fetchone = list(fetchone)
         compatOrder = [fetchone[2]] + fetchone[4:] + [fetchone[1], fetchone[0], fetchone[3]]
         debug("compatTableau gets " + str(compatOrder))
-        self.compatTableau(c, compatOrder)
+        #self.compatTableau(c, compatOrder)
         fetchoneList = list(fetchone) #IF THIS ERRORS THE PROGRAM COULD NOT FIND THE CORRECT DATA TO UPLOAD
         debug("fetchoneList: "+str(fetchoneList))
 
-        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, self.team.event))
+        c.execute("SELECT * FROM `main` WHERE `team`=%s AND `round`=%s AND `event`=%s", (self.team.number, self.team.round, CURRENT_EVENT))
         test = c.fetchone()
         if not test: #setting up pi database to take the data
-            c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", (self.team.number, self.team.round, self.team.event))
+            c.execute("INSERT INTO `main`(`team`,`round`,`event`) VALUES (%s,%s,%s);", (self.team.number, self.team.round, CURRENT_EVENT))
         elif test: #if the pi database is already set to take the data
             debug("THERE SHOULD BE DATA HERE: " + str(test))
 
@@ -1077,7 +1083,8 @@ class Screen(StackLayout):
                      `notes`=%s,
                      `position`=%s,
                      `Foul`=%s,
-                     `TFoul`=%s
+                     `TFoul`=%s,
+                     `AGear Pos`=%s
                      WHERE `team`=%s AND `round`=%s AND `event`=%s;""",
                   orderFetch
                   ) #send the pi the data
@@ -1171,11 +1178,13 @@ class Screen(StackLayout):
 
 class MyApp(App):
     def build(self):
-#        if os.geteuid() != 0:
-#            os.system("sudo main.py")
         return Screen()
+
 
 if __name__ == "__main__":
     MyApp().run()
 
 #wha-pang
+#boioioioioiioioioioioioioioioioioioioioioioioing
+
+#hard instantly

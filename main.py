@@ -25,7 +25,7 @@ import random
 
 CURRENT_EVENT = "test"
 
-#mysql pi ip: 10.111.49.41
+piip = "10.111.49.62"
 
 DEBUG = 1
 def debug(msg, type="normal"):
@@ -411,7 +411,7 @@ class Screen(StackLayout):
         if scouterexist:
             db.execute("UPDATE `lastscouter` SET `name`=?, `color`=?", (name, color))
         else:
-            db.execute("INSERT INTO `lastscouter`(`name`) VALUES (?);", (name, color))
+            db.execute("INSERT INTO `lastscouter`(`name`, `color`) VALUES (?, ?);", (name, color))
         db.commit()
         db.close()
         debug("setlastscouter() end", "header")
@@ -985,7 +985,7 @@ class Screen(StackLayout):
     def uploadAll(self, obj=None): #uploads all data in the local database into the pi database
         debug("uploadAll()", "title")
         try:
-            db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi
+            db = mysql.connector.connect(host=piip, user="pi", passwd="pi", db="matchdat") #connect to pi
         except:
             debug("unable to connect to database, aborting upload")
             self.didUploadAll = "Failed to connect to the database."
@@ -1008,7 +1008,7 @@ class Screen(StackLayout):
 
     def download(self, obj=None): #TODO: implement
         debug("download()", "title")
-        db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat")
+        db = mysql.connector.connect(host=piip, user="pi", passwd="pi", db="matchdat")
         c = db.cursor()
         dbl = sqlite3.connect("rounddat.db")
         cl = dbl.cursor()
@@ -1018,7 +1018,7 @@ class Screen(StackLayout):
     def upload(self, obj=None): #uploads loaded data into the pi database
         debug("upload()", "title")
         try:
-            db = mysql.connector.connect(host="10.111.49.41", user="pi", passwd="pi", db="matchdat") #connect to pi
+            db = mysql.connector.connect(host=piip, user="pi", passwd="pi", db="matchdat") #connect to pi
         except:
             debug("unable to connect to database, aborting upload")
             self.didUpload = "Failed to connect to the database"

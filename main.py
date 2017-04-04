@@ -743,7 +743,7 @@ class Screen(StackLayout):
         lowLbl2=       xlargeSideLabel("", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl2)
         dummyLbl241 =  xcLabel(text="", rgb=[0, 0, 0], size_hint=(.23, .075)); displist.append(dummyLbl241)
         teamDisp2 =    xlargeLabel("Round " + str(self.team.round), rgb=[0, 0, 0, 1]); displist.append(teamDisp2)
-        dummyLbl123 =  xlargeLabel("Event " + str(CURRENT_EVENT), rgb=[0, 0, 0, 1]); displist.append(dummyLbl123)
+        eventBtn =     xlargeButton("Event " + str(CURRENT_EVENT), rgb=[0, 0, 0, 1]); eventBtn.bind(on_release=self.scrEvent) displist.append(dummyLbl123)
         highLbl2 =     xlargeSideLabel("Hit        Miss", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl2) #cheesing so that we don't have to make two labels
 
             #line 3

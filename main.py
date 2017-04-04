@@ -22,8 +22,9 @@ import mysql.connector
 import time
 import os
 import random
+import string
 
-CURRENT_EVENT = "test"
+CURRENT_EVENT = "Shepherd"
 
 piip = "10.111.49.62"
 
@@ -735,15 +736,15 @@ class Screen(StackLayout):
         lowLbl =       xlargeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
         dummyLbl =     xlargeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl)
         #self.timeLbl = xlargeButton(txt=str(self.can), rgb=[0, 0, 0]);self.timeLbl.bind(on_release=lambda x: self.Hi());displist.append(self.timeLbl)
-        teamDisp =     xlargeLabel("Team " + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamDisp)
+        teamDisp =     xlargeButton(txt="Team " + str(self.team.number), rgb=[0, 0, 0]); teamDisp.bind(on_release=self.scrTeam); displist.append(teamDisp)
         dummyLbl2 =    xlargeLabel("Scouter " + str(self.team.scouterName), rgb=[0, 0, 0, 1]); displist.append(dummyLbl2)
         highLbl =      xlargeSideLabel("High goal", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl) #cheesing so that we don't have to make two labels
 
             #line 2
         lowLbl2=       xlargeSideLabel("", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl2)
         dummyLbl241 =  xcLabel(text="", rgb=[0, 0, 0], size_hint=(.23, .075)); displist.append(dummyLbl241)
-        teamDisp2 =    xlargeLabel("Round " + str(self.team.round), rgb=[0, 0, 0, 1]); displist.append(teamDisp2)
-        eventBtn =     xlargeButton("Event " + str(CURRENT_EVENT), rgb=[0, 0, 0, 1]); eventBtn.bind(on_release=self.scrEvent) displist.append(dummyLbl123)
+        roundBtn =    xlargeButton(txt="Round " + str(self.team.round), rgb=[0, 0, 0]); roundBtn.bind(on_release=self.scrRound); displist.append(roundBtn)
+        dummyLbl123 =  xlargeLabel("Event " + str(CURRENT_EVENT), rgb=[0, 0, 0, 1]); displist.append(dummyLbl123)
         highLbl2 =     xlargeSideLabel("Hit        Miss", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl2) #cheesing so that we don't have to make two labels
 
             #line 3
@@ -801,8 +802,8 @@ class Screen(StackLayout):
         capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
         addGear =      smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addGear.bind(on_release=lambda x: self.addGear(1, gearDisp)); displist.append(addGear)
         decGear =      smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decGear.bind(on_release=lambda x: self.addGear(-1, gearDisp)); displist.append(decGear)
-        addatpGear =   smallButton("+", rgb=[(28/255),0,(201/255)]); addatpGear.bind(on_release=lambda x: self.addatpGear(1, AtpGearDisp)); displist.append(addatpGear)
-        decatpGear =   smallButton("-", rgb=[(28/255),0,(201/255)]); decatpGear.bind(on_release=lambda x: self.addatpGear(-1, AtpGearDisp)); displist.append(decatpGear)
+        addatpGear =   smallButton("+", rgb=[(28/255),0,(201/255)]); addatpGear.bind(on_release=lambda x: self.addatpGear(1, atpGearDisp)); displist.append(addatpGear)
+        decatpGear =   smallButton("-", rgb=[(28/255),0,(201/255)]); decatpGear.bind(on_release=lambda x: self.addatpGear(-1, atpGearDisp)); displist.append(decatpGear)
         addHigh3 =     smallSideButton("+3", rgb=[(28/255),(201/255),(40/255)]); addHigh3.bind(on_release=lambda x: self.addHigh(3, highDisp)); displist.append(addHigh3)
         addMissHigh3 = smallSideButton("+3", rgb=[(120/255),(201/255),(40/255)]); addMissHigh3.bind(on_release=lambda x: self.addMissHigh(3, MissHighDisp)); displist.append(addMissHigh3)
 
@@ -935,6 +936,60 @@ class Screen(StackLayout):
         for widg in displist:
             self.add_widget(widg)
         debug("scrEvent end", "title")
+
+    def scrRound(self, obj=None, text=""):
+        debug("scrEvent", "title")
+        self.clear_widgets()
+        displist = list()
+
+        roundLbl = cLabel(text="Round number", size_hint=(.5, .5)); displist.append(roundLbl)
+        self.roundTxt = TextInput(hint_text=text, multiline=False, size_hint=(.5, .5)); self.roundTxt.bind(on_text_validate=self.handleRound); displist.append(self.roundTxt)
+        goBtn = cButton(text="Go", size_hint=(1, .5)); goBtn.bind(on_release=self.handleRound); displist.append(goBtn)
+
+        for widg in displist:
+            self.add_widget(widg)
+        debug("scrEvent end", "title")
+
+    def handleRound(self, obj=None):
+        if not self.roundTxt.text: return
+        for i in self.roundTxt.text:
+            if not i in string.digits:
+                self.scrRound(text="Enter a number value.")
+                return
+        dbl = sqlite3.connect("rounddat.db")
+        dbl.execute("UPDATE main SET round=? WHERE team=? AND round=? AND event=?", (self.roundTxt.text, self.team.number, self.team.round, CURRENT_EVENT))
+        debug(self.roundTxt.text)
+        self.team.round = self.roundTxt.text
+        dbl.commit()
+        dbl.close()
+        self.scrMain()
+
+    def scrTeam(self, obj=None, text=""):
+        debug("scrEvent", "title")
+        self.clear_widgets()
+        displist = list()
+
+        teamLbl = cLabel(text="team number", size_hint=(.5, .5)); displist.append(teamLbl)
+        self.teamTxt = TextInput(hint_text=text, multiline=False, size_hint=(.5, .5)); self.teamTxt.bind(on_text_validate=self.handleTeam); displist.append(self.teamTxt)
+        goBtn = cButton(text="Go", size_hint=(1, .5)); goBtn.bind(on_release=self.handleTeam); displist.append(goBtn)
+
+        for widg in displist:
+            self.add_widget(widg)
+        debug("scrEvent end", "title")
+
+    def handleTeam(self, obj=None):
+        if not self.teamTxt.text: return
+        for i in self.teamTxt.text:
+            if not i in string.digits:
+                self.scrTeam(text="Enter a number value.")
+                return
+        dbl = sqlite3.connect("rounddat.db")
+        dbl.execute("UPDATE main SET team=? WHERE team=? AND team=? AND event=?", (self.teamTxt.text, self.team.number, self.team.round, CURRENT_EVENT))
+        debug(self.teamTxt.text)
+        self.team.number = self.teamTxt.text
+        dbl.commit()
+        dbl.close()
+        self.scrMain()
 
     def areYouSure(self, camefrom=None, obj=None): #prompt for leaving saved data
         debug("areYouSure()", "title")

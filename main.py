@@ -22,8 +22,9 @@ import mysql.connector
 import time
 import os
 import random
+import string
 
-CURRENT_EVENT = "test"
+CURRENT_EVENT = "Shepherd"
 
 piip = "10.111.49.62"
 
@@ -945,13 +946,13 @@ class Screen(StackLayout):
             self.add_widget(widg)
         debug("scrEvent end", "title")
 
-    def scrRound(self, obj=None):
+    def scrRound(self, obj=None, text=""):
         debug("scrEvent", "title")
         self.clear_widgets()
         displist = list()
 
         roundLbl = cLabel(text="Round number", size_hint=(.5, .5)); displist.append(roundLbl)
-        self.roundTxt = TextInput(multiline=False, size_hint=(.5, .5)); self.roundTxt.bind(on_text_validate=self.handleRound); displist.append(self.roundTxt)
+        self.roundTxt = TextInput(hint_text=text, multiline=False, size_hint=(.5, .5)); self.roundTxt.bind(on_text_validate=self.handleRound); displist.append(self.roundTxt)
         goBtn = cButton(text="Go", size_hint=(1, .5)); goBtn.bind(on_release=self.handleRound); displist.append(goBtn)
 
         for widg in displist:
@@ -959,6 +960,11 @@ class Screen(StackLayout):
         debug("scrEvent end", "title")
 
     def handleRound(self, obj=None):
+        if not self.roundTxt.text: return
+        for i in self.roundTxt.text:
+            if not i in string.digits:
+                self.scrRound(text="Enter a number value.")
+                return
         dbl = sqlite3.connect("rounddat.db")
         dbl.execute("UPDATE main SET round=? WHERE team=? AND round=? AND event=?", (self.roundTxt.text, self.team.number, self.team.round, CURRENT_EVENT))
         debug(self.roundTxt.text)
@@ -967,13 +973,13 @@ class Screen(StackLayout):
         dbl.close()
         self.scrMain()
 
-    def scrTeam(self, obj=None):
+    def scrTeam(self, obj=None, text=""):
         debug("scrEvent", "title")
         self.clear_widgets()
         displist = list()
 
         teamLbl = cLabel(text="team number", size_hint=(.5, .5)); displist.append(teamLbl)
-        self.teamTxt = TextInput(multiline=False, size_hint=(.5, .5)); self.teamTxt.bind(on_text_validate=self.handleTeam); displist.append(self.teamTxt)
+        self.teamTxt = TextInput(hint_text=text, multiline=False, size_hint=(.5, .5)); self.teamTxt.bind(on_text_validate=self.handleTeam); displist.append(self.teamTxt)
         goBtn = cButton(text="Go", size_hint=(1, .5)); goBtn.bind(on_release=self.handleTeam); displist.append(goBtn)
 
         for widg in displist:
@@ -981,6 +987,11 @@ class Screen(StackLayout):
         debug("scrEvent end", "title")
 
     def handleTeam(self, obj=None):
+        if not self.teamTxt.text: return
+        for i in self.teamTxt.text:
+            if not i in string.digits:
+                self.scrTeam(text="Enter a number value.")
+                return
         dbl = sqlite3.connect("rounddat.db")
         dbl.execute("UPDATE main SET team=? WHERE team=? AND team=? AND event=?", (self.teamTxt.text, self.team.number, self.team.round, CURRENT_EVENT))
         debug(self.teamTxt.text)

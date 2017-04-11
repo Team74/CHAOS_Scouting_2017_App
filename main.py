@@ -275,8 +275,8 @@ class PongPaddle(Widget):
             vx, vy = ball.velocity
             offset = (ball.center_y - self.center_y) / (self.height / 2)
             bounced = Vector(-1 * vx, vy)
-            vel = bounced * 99999
-            if vel.length() >= 1339999999999999999999999999999999999999999999999999999999999999999999999999:
+            vel = bounced * 1.25
+            if vel.length() >= 80:
                 vel = bounced * 1
             ball.velocity = vel.x, vel.y + offset
             print (vel.length())

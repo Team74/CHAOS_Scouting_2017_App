@@ -226,7 +226,8 @@ class Team:
         debug("getAttr() end", "header 2")
 
     def putData(self, data): #puts the data from the local database into the object
-        mapping = {0:'none', 1:'far', 2:'mid', 3:'boi', 'none':0, 'far':1, 'mid':2, 'boi':3}
+        mapping = {'none':0, 'far':1, 'mid':2, 'boi':3}
+        rmapping = {0:'none', 1:'far', 2:'mid', 3:'boi'}
         debug("putData()", "header")
         debug(data)
         data = list(data)
@@ -274,8 +275,8 @@ class PongPaddle(Widget):
             vx, vy = ball.velocity
             offset = (ball.center_y - self.center_y) / (self.height / 2)
             bounced = Vector(-1 * vx, vy)
-            vel = bounced * 1.15
-            if vel.length() >= 88:
+            vel = bounced * 1.25
+            if vel.length() >= 80:
                 vel = bounced * 1
             ball.velocity = vel.x, vel.y + offset
             print (vel.length())
@@ -293,17 +294,13 @@ class PongGame(Widget):
     player1 = ObjectProperty(None)
     player2 = ObjectProperty(None)
 
-    def __init__(self, **kwargs):
-        self.stop = False
-        super(PongGame, self).__init__(**kwargs)
+    parentscreen = None
 
     def serve_ball(self, vel=(4, 0)):
         self.ball.center = self.center
         self.ball.velocity = vel
 
     def update(self, dt):
-        if self.stop: return
-
         self.ball.move()
 
         # bounce of paddles
@@ -317,10 +314,18 @@ class PongGame(Widget):
         # went of to a side to score point?
         if self.ball.x < self.x:
             self.player2.score += 1
-            self.stop = True
+            self.serve_ball(vel=(4, 0))
         if self.ball.x > self.width:
             self.player1.score += 1
-            self.stop = True
+            self.serve_ball(vel=(-4, 0))
+        if self.player1.score == 4:
+            self.parentscreen.win = "P1 Wins"
+            self.player1.score = 0
+            self.parentscreen.scrMain()
+        if self.player2.score == 4:
+            self.parentscreen.win = "P2 Wins"
+            self.player2.score = 0
+            self.parentscreen.scrMain()
 
     def on_touch_move(self, touch):
         if touch.x < self.width / 3:
@@ -328,10 +333,13 @@ class PongGame(Widget):
         if touch.x > self.width - self.width / 3:
             self.player2.center_y = touch.y
 
+game = PongGame()
+
 #main class, overwrites stacklayout layout from kivy
 class Screen(StackLayout):
     prev = ''
-    mapping = {0:'none', 1:'far', 2:'mid', 3:'boi', 'none':0, 'far':1, 'mid':2, 'boi':3}
+    mapping = {'none':0, 'far':1, 'mid':2, 'boi':3}
+    rmapping = {0:'none', 1:'far', 2:'mid', 3:'boi', }
 
     #save above
 
@@ -535,18 +543,15 @@ class Screen(StackLayout):
         debug("pos color", "header 2")
         debug(self.team.posfin)
 
-        if self.team.gfin == 1:
+        if self.team.gfin == 0:
             self.team.g = 'never attempted the gear'
             self.team.gcolor = [(117/255), (117/255), (117/255)]
             self.team.gfing = 'made the gear'
-        elif self.team.gfin == 2:
+        elif self.team.gfin == 1:
             self.team.g = 'made the gear'
             self.team.gcolor = [0, (255/255), (42/255)]
-            self.team.gfing = 'missed the gear'
-        else:
-            self.team.g = 'missed the gear'
-            self.team.gcolor = [(235/255), (61/255), (255/255)]
             self.team.gfing = 'never attempted the gear'
+        
         self.setAGP()
 
         debug(self.team.color)
@@ -605,8 +610,8 @@ class Screen(StackLayout):
         debug(self.konami[-10:])
         try:
             if self.konami[-10:] == ["up", "up", "down", "down", "left", "right", "left", "right", "b", "a"] and self.canPong:
-                game = PongGame()
                 game.serve_ball()
+                game.parentscreen = self
                 Clock.schedule_interval(game.update, 1.0 / 60.0)
                 self.clear_widgets()
                 self.add_widget(game)
@@ -697,7 +702,7 @@ class Screen(StackLayout):
         self.reloadList = [widg]
         self.team.wg = self.team.wg + 1
         debug(self.team.wgn)
-        self.mapping = {0:'n', 1:'f', 2:'m', 3:'b'}
+        self.mapping = {0:'None', 1:'far', 2:'mid', 3:'boiler'}
         if self.team.wg >= 4:
             self.team.wg = self.team.wg - 4
         self.setAGP()
@@ -725,6 +730,7 @@ class Screen(StackLayout):
     #main functions (displays)
     def scrMain(self, obj=None, reload=False): #teleop scr
         debug("scrMain()", "title")
+        Clock.unschedule(game.update)
         displist = list()
         self.camefrom = "tele" #used to route the cancel button on the areyousure scr
         #reset menu button text
@@ -1024,7 +1030,7 @@ class Screen(StackLayout):
         d = self.team.getAttr() #get information dict from self.team
         debug(d)
         db.execute("UPDATE `main` SET `highgoal`=?,`lowgoal`=?,`gears`=?,`Foul`=?,`TFoul`=?,`pickupGears`=?,`pickupBalls`=?,`climbed`=?,`capacity`=?,`aHighgoal`=?,`aLowgoal`=?,`aGears`=?,`scouterName`=?,`aCrossed`=?, `team color`=?, `AtpGears`=?, `MissHighGoal`=?, `notes`=?, `position`=?, `AGear Pos`=? WHERE `team`=? AND `round`=? AND `event`=?;",
-                   (d["highgoal"],d["lowgoal"],d["gears"],d["Foul"],d["TFoul"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["AtpGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],self.mapping[d["wg"]],d["number"],d["round"],CURRENT_EVENT)
+                   (d["highgoal"],d["lowgoal"],d["gears"],d["Foul"],d["TFoul"],d["pickupGears"],d["pickupBalls"],d["climb"],d["capacity"],d["aHighgoal"],d["aLowgoal"],d["gfin"],d["scouterName"],d["aCrossed"],d["color"],d["AtpGears"],d["MissHighGoal"],d["prevnotes"],d["posfin"],self.rmapping[d["wg"]],d["number"],d["round"],CURRENT_EVENT)
                    ) #sql wizardry, simply takes out all of the stuff stored in d (data) and puts it in its respective places
         db.execute("UPDATE `team` SET `capacity`=?,`pickupGears`=?,`pickupBalls`=? WHERE `team`=?",
                    (d["capacity"],d["pickupGears"],d["pickupBalls"], self.team.number)) #updating the constants storage table

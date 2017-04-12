@@ -543,22 +543,25 @@ class Screen(StackLayout):
         debug("pos color", "header 2")
         debug(self.team.posfin)
 
-        if self.team.gfin == 0:
+        if self.team.gfin == 1:
             self.team.g = 'never attempted the gear'
             self.team.gcolor = [(117/255), (117/255), (117/255)]
             self.team.gfing = 'made the gear'
-        elif self.team.gfin == 1:
+        elif self.team.gfin == 2:
             self.team.g = 'made the gear'
             self.team.gcolor = [0, (255/255), (42/255)]
+            self.team.gfing = 'missed the gear'
+        else:
+            self.team.g = 'missed the gear'
+            self.team.gcolor = [(235/255), (61/255), (255/255)]
             self.team.gfing = 'never attempted the gear'
-        
         self.setAGP()
 
         debug(self.team.color)
         cl.close()
         dbl.close()
         debug("setTeam() end", "title")
-        self.scrMain()
+        self.scrAuton()
 
         eventname = CURRENT_EVENT
         db = sqlite3.connect('rounddat.db')

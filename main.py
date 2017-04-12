@@ -543,17 +543,13 @@ class Screen(StackLayout):
         debug("pos color", "header 2")
         debug(self.team.posfin)
 
-        if self.team.gfin == 1:
+        if self.team.gfin == 0:
             self.team.g = 'never attempted the gear'
             self.team.gcolor = [(117/255), (117/255), (117/255)]
             self.team.gfing = 'made the gear'
-        elif self.team.gfin == 2:
+        elif self.team.gfin == 1:
             self.team.g = 'made the gear'
             self.team.gcolor = [0, (255/255), (42/255)]
-            self.team.gfing = 'missed the gear'
-        else:
-            self.team.g = 'missed the gear'
-            self.team.gcolor = [(235/255), (61/255), (255/255)]
             self.team.gfing = 'never attempted the gear'
         self.setAGP()
 

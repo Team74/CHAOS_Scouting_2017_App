@@ -771,7 +771,7 @@ class Screen(StackLayout):
         #dummyLbl126=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl126)
         toggleAuton =  smallButton("Auton", rgb=[(201/255),(170/255),(28/255)]); toggleAuton.bind(on_release=self.scrAuton); displist.append(toggleAuton)
         toggleCapab =  smallButton("Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
-        decHigh =      largeSideLabel("-1", rgb=[(28/255),(201/255),(40/255)]); decHigh.bind(on_release=lambda x: self.addHigh(-1, highDisp)); displist.append(decHigh)
+        decHigh =      largeSideButton("-1", rgb=[(28/255),(201/255),(40/255)]); decHigh.bind(on_release=lambda x: self.addHigh(-1, highDisp)); displist.append(decHigh)
 
             #line 5
         decLow9 =     smallSideButton("-9", rgb=[(14/255),(201/255),(170/255)]); decLow9.bind(on_release=lambda x: self.addLow(-9, lowDisp)); displist.append(decLow9)

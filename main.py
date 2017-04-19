@@ -24,7 +24,7 @@ import os
 import random
 import string
 
-CURRENT_EVENT = "Shepherd"
+CURRENT_EVENT = "Worlds"
 
 piip = "10.111.49.62"
 
@@ -662,9 +662,9 @@ class Screen(StackLayout):
         if mode == "Stop":
             Clock.unschedule( self.updateClock )
             climbEnd = time.time()
-            climbDiff = round( (climbEnd - self.climbStart), 2)
+            climbDiff = str( round( (climbEnd - self.climbStart), 2) )[:3]
             debug(climbDiff)
-            self.team.climb = climbDiff
+            self.team.climb = float(climbDiff)
             widg.text = str(climbDiff)
         if mode == "None":
             Clock.unschedule( self.updateClock )
@@ -711,7 +711,7 @@ class Screen(StackLayout):
         widg.text=self.team.g
         widg.background_color=self.team.gcolor + [1]
 
-    def ididit(self, widg, basslinewidg):
+    def linkCrossAGear(self, widg, basslinewidg):
         print('1235412734213642816342561')
         self.checkg(widg)
         if self.team.gfin == 1:
@@ -753,7 +753,7 @@ class Screen(StackLayout):
             self.team.wgn ='far'
         print(self.team.wg)
     def updateClock(self, widg, obj=None):
-        self.timeDisp.text = str( round( (time.time() - self.climbStart), 2) )
+        self.timeDisp.text = str( round( (time.time() - self.climbStart), 2) )[:3]
 
     #main functions (displays)
     def scrMain(self, obj=None):
@@ -942,7 +942,7 @@ class Screen(StackLayout):
         lowm5 =  autonButton(txt="-5", rgb=[(14/255),(201/255),(170/255)]); lowm5.bind(on_release=lambda x: self.aAddLow(-5, lowDisp)); displist.append(lowm5)
         xedBtn = autonButton(txt="The team %s cross the ready line."%("DID"if self.team.aCrossed else"DIDN'T"),rgb=[(28/255),(129/255),(201/255)]);xedBtn.bind(on_release=self.aToggleCross);displist.append(xedBtn)
         highm3 = autonButton(txt="-3", rgb=[(28/255),(201/255),(40/255)]); highm3.bind(on_release=lambda x: self.aAddHigh(-3, highDisp)); displist.append(highm3)
-        checkg.bind(on_release=lambda x: self.ididit(checkg, xedBtn))
+        checkg.bind(on_release=lambda x: self.linkCrossAGear(checkg, xedBtn))
         self.clear_widgets()
         for widg in displist:
             self.add_widget(widg)

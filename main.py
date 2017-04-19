@@ -600,12 +600,16 @@ class Screen(StackLayout):
             self.team.MissHighGoal = 0
         widg.text = str(self.team.MissHighGoal)
         if count > 0: self.konami.append("right")
-    def addGear(self, count, widg): #add to gears scored
+    def addGear(self, count, widg, atpwidg): #add to gears scored
         debug("addGear()")
         self.reloadList = [widg]
         self.team.gears += count
         if self.team.gears <= 0:
             self.team.gears = 0
+        if self.team.gears > self.team.AtpGears:
+            self.team.AtpGears = self.team.gears
+            self.addatpGear(0, atpwidg)
+
         widg.text = str(self.team.gears)
         if count > 0: self.konami.append("a")
         if count < 0: self.konami.append("b")
@@ -693,8 +697,17 @@ class Screen(StackLayout):
             self.team.g = 'never atp the gear'
             self.team.gcolor = [(117/255), (117/255), (117/255)]
             self.team.gfing ='made the gear'
+        widg.text=self.team.g
+        widg.background_color=self.team.gcolor + [1]
 
-        self.scrAuton()
+    def ididit(self, widg, basslinewidg):
+        print('1235412734213642816342561')
+        self.checkg(widg)
+        if self.team.gfin == 1:
+            print('111111111111111111111111111111111')
+            if self.team.aCrossed == 0:
+                print('yyyyyyyyyyyyyyyyyyy')
+                self.aToggleCross(basslinewidg)
     def aToggleCross(self, widg, obj=None): #toggle if team crossed base line in auton
         debug("aToggleCross")
         self.reloadList = [widg]
@@ -730,7 +743,7 @@ class Screen(StackLayout):
         print(self.team.wg)
 
     #main functions (displays)
-    def scrMain(self, obj=None)
+    def scrMain(self, obj=None):
         debug("scrMain()", "title")
         Clock.unschedule(game.update)
         displist = list()
@@ -803,10 +816,12 @@ class Screen(StackLayout):
         incLow15 =     smallSideButton("15", rgb=[(14/255),(201/255),(170/255)]); incLow15.bind(on_release=lambda x: self.addLow(15, lowDisp)); displist.append(incLow15)
         capDispAdd =   smallButton("+" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispAdd.bind(on_release=lambda x: self.addLow(self.team.capacity, lowDisp)); displist.append(capDispAdd)
         capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
-        addGear =      smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addGear.bind(on_release=lambda x: self.addGear(1, gearDisp)); displist.append(addGear)
-        decGear =      smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decGear.bind(on_release=lambda x: self.addGear(-1, gearDisp)); displist.append(decGear)
+        addGear =      smallButton("+", rgb=[(28/255),(129/255),(201/255)]); displist.append(addGear)
+        decGear =      smallButton("-", rgb=[(28/255),(129/255),(201/255)]); displist.append(decGear)
         addatpGear =   smallButton("+", rgb=[(28/255),0,(201/255)]); addatpGear.bind(on_release=lambda x: self.addatpGear(1, atpGearDisp)); displist.append(addatpGear)
         decatpGear =   smallButton("-", rgb=[(28/255),0,(201/255)]); decatpGear.bind(on_release=lambda x: self.addatpGear(-1, atpGearDisp)); displist.append(decatpGear)
+        decGear.bind(on_release=lambda x: self.addGear(-1, gearDisp, atpGearDisp))
+        addGear.bind(on_release=lambda x: self.addGear(1, gearDisp, atpGearDisp))
         addHigh3 =     largeSideButton("+3", rgb=[(28/255),(201/255),(40/255)]); addHigh3.bind(on_release=lambda x: self.addHigh(3, highDisp)); displist.append(addHigh3)
 
         self.clear_widgets()
@@ -914,13 +929,13 @@ class Screen(StackLayout):
         high3 =       autonButton(txt="+3", rgb=[(28/255),(201/255),(40/255)]); high3.bind(on_release=lambda x: self.aAddHigh(3, highDisp)); displist.append(high3)
         #row 5
         lowm1 =   autonButton(txt="-1", rgb=[(14/255),(201/255),(170/255)]); lowm1.bind(on_release=lambda x: self.aAddLow(-1, lowDisp)); displist.append(lowm1)
-        checkg =  autonButton(self.team.g, self.team.gcolor); checkg.bind(on_release=lambda x: self.checkg(checkg)); displist.append(checkg)
+        checkg =  autonButton(self.team.g, self.team.gcolor); displist.append(checkg)
         highm1 =  autonButton(txt="-1", rgb=[(28/255),(201/255),(40/255)]); highm1.bind(on_release=lambda x: self.aAddHigh(-1, highDisp)); displist.append(highm1)
         #row 6
         lowm5 =  autonButton(txt="-5", rgb=[(14/255),(201/255),(170/255)]); lowm5.bind(on_release=lambda x: self.aAddLow(-5, lowDisp)); displist.append(lowm5)
         xedBtn = autonButton(txt="The team %s cross the ready line."%("DID"if self.team.aCrossed else"DIDN'T"),rgb=[(28/255),(129/255),(201/255)]);xedBtn.bind(on_release=self.aToggleCross);displist.append(xedBtn)
         highm3 = autonButton(txt="-3", rgb=[(28/255),(201/255),(40/255)]); highm3.bind(on_release=lambda x: self.aAddHigh(-3, highDisp)); displist.append(highm3)
-
+        checkg.bind(on_release=lambda x: self.ididit(checkg, xedBtn))
         self.clear_widgets()
         for widg in displist:
             self.add_widget(widg)

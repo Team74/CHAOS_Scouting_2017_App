@@ -220,7 +220,6 @@ class Team:
         self.w = 'no gear auton'
         self.wgn = 'no gear auton'
         self.wcolor = [0, 0, 0,]
-        self.climbTime = list()
 
     def getAttr(self): #used in saving and uploading, dumps all vars
         debug("getAttr()", "header 2")
@@ -340,6 +339,7 @@ game = PongGame()
 
 #main class, overwrites stacklayout layout from kivy
 class Screen(StackLayout):
+    timeDisp = None
     prev = ''
     mapping = {'none':0, 'far':1, 'mid':2, 'boi':3}
     rmapping = {0:'none', 1:'far', 2:'mid', 3:'boi', }
@@ -650,11 +650,22 @@ class Screen(StackLayout):
         self.reloadList = [widg]
         self.team.pickupBalls = int(not self.team.pickupBalls)
         widg.text = "The robot %s pickup balls off of the ground." % ("CAN" if self.team.pickupBalls else "CAN'T")
-    def climbed(self, widg, obj=None): #toggle whether or not the team climbed
+    def climbed(self, widg, mode="Start", obj=None): #toggle whether or not the team climbed
         debug("climbed()")
-        self.reloadList = [widg]
-        self.team.climb = int(not self.team.climb)
-        widg.text = "climbed" if self.team.climb else "didn't climb"
+        if mode == "Start":
+            self.climbStart = time.time()
+            Clock.schedule_interval( self.updateClock, .01 )
+        if mode == "Stop":
+            Clock.unschedule( self.updateClock )
+            climbEnd = time.time()
+            climbDiff = round( (climbEnd - self.climbStart), 2)
+            debug(climbDiff)
+            self.team.climb = climbDiff
+            widg.text = str(climbDiff)
+        if mode == "None":
+            Clock.unschedule( self.updateClock )
+            self.team.climb = 0
+            widg.text = "0"
     def color(self, widg, obj=None): #toggle the team color (red, blue)
         debug("color")
         self.reloadList = [widg]
@@ -728,9 +739,11 @@ class Screen(StackLayout):
             self.team.wcolor = [0, 0, 0,]
             self.team.wgn ='far'
         print(self.team.wg)
+    def updateClock(self, widg, obj=None):
+        self.timeDisp.text = str( round( (time.time() - self.climbStart), 2) )
 
     #main functions (displays)
-    def scrMain(self, obj=None)
+    def scrMain(self, obj=None):
         debug("scrMain()", "title")
         Clock.unschedule(game.update)
         displist = list()
@@ -738,76 +751,71 @@ class Screen(StackLayout):
         #reset menu button text
         self.didSave = "save"
         self.didUpload = "               Upload \n (Save before uploading)"
-        self.didUploadAll = "          Upload all \n (Save before uploading)"
+        self.didUploadAll = "            Upload all \n (Save before uploading)"
 
             #line 1
-        lowLbl =       xlargeSideLabel("Low goal", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
-        dummyLbl =     xlargeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl)
-        #self.timeLbl = xlargeButton(txt=str(self.can), rgb=[0, 0, 0]);self.timeLbl.bind(on_release=lambda x: self.Hi());displist.append(self.timeLbl)
+        climbLbl =     xlargeSideLabel("Climb", rgb=[(14/255),(201/255),(170/255)]); displist.append(climbLbl)
+        spaceLbl =     xlargeLabel("", rgb=[0, 0, 0, 1]); displist.append(spaceLbl)
         teamDisp =     xlargeButton(txt="Team " + str(self.team.number), rgb=[0, 0, 0]); teamDisp.bind(on_release=self.scrTeam); displist.append(teamDisp)
-        dummyLbl2 =    xlargeLabel("Scouter " + str(self.team.scouterName), rgb=[0, 0, 0, 1]); displist.append(dummyLbl2)
-        highLbl =      xlargeSideLabel("High goal", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl) #cheesing so that we don't have to make two labels
+        scouterDisp =  xlargeLabel("Scouter " + str(self.team.scouterName), rgb=[0, 0, 0, 1]); displist.append(scouterDisp)
+        highLbl =      xlargeSideLabel("kPa", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl) #cheesing so that we don't have to make two labels
 
             #line 2
-        lowLbl2=       xlargeSideLabel("", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl2)
-        dummyLbl241 =  xcLabel(text="", rgb=[0, 0, 0], size_hint=(.23, .075)); displist.append(dummyLbl241)
-        roundBtn =    xlargeButton(txt="Round " + str(self.team.round), rgb=[0, 0, 0]); roundBtn.bind(on_release=self.scrRound); displist.append(roundBtn)
-        dummyLbl123 =  xlargeLabel("Event " + str(CURRENT_EVENT), rgb=[0, 0, 0, 1]); displist.append(dummyLbl123)
-        highLbl2 =     xlargeSideLabel("", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl2) #cheesing so that we don't have to make two labels
+        spaceLbl1=     xlargeSideLabel("", rgb=[(14/255),(201/255),(170/255)]); displist.append(spaceLbl1)
+        spaceLbl2 =    xcLabel(text="", rgb=[0, 0, 0], size_hint=(.23, .075)); displist.append(spaceLbl2)
+        roundBtn =     xlargeButton(txt="Round " + str(self.team.round), rgb=[0, 0, 0]); roundBtn.bind(on_release=self.scrRound); displist.append(roundBtn)
+        eventDisp =    xlargeLabel("Event " + str(CURRENT_EVENT), rgb=[0, 0, 0, 1]); displist.append(eventDisp)
+        spaceLbl3 =    xlargeSideLabel("", rgb=[(28/255),(201/255),(40/255)]); displist.append(spaceLbl3) #cheesing so that we don't have to make two labels
 
             #line 3
-        lowDisp =      largeSideLabel(str(self.team.lowgoal), rgb=[(14/255),(201/255),(170/255)]); displist.append(lowDisp)
-        checkColor =   smallButton("Team Blue" if self.team.color else "Team Red", rgb=self.buttoncolor); checkColor.bind(on_release=lambda x: self.color(checkColor)); displist.append(checkColor)
-        checkClimb1 =  smallButton("climbed" if self.team.climb else "didn't climb", rgb=[(201/255),(28/255),(147/255)]); checkClimb1.bind(on_release=lambda x: self.climbed(checkClimb1)); displist.append(checkClimb1)
-        dummyLbl4 =    largeLabel("Teleop", rgb=[0, 0, 0, 1]); displist.append(dummyLbl4)
+        self.timeDisp =largeSideLabel(str(self.team.climb), rgb=[(14/255),(201/255),(170/255)]); displist.append(self.timeDisp)
+        checkColor =   largeButton("Team Blue" if self.team.color else "Team Red", rgb=self.buttoncolor); checkColor.bind(on_release=lambda x: self.color(checkColor)); displist.append(checkColor)
+        #checkClimb1 =  smallButton("climbed" if self.team.climb else "didn't climb", rgb=[(201/255),(28/255),(147/255)]); checkClimb1.bind(on_release=lambda x: self.climbed(checkClimb1)); displist.append(checkClimb1)
+        teleopLbl =    largeLabel("Teleop", rgb=[0, 0, 0, 1]); displist.append(teleopLbl)
         toggleExit =   largeButton("Menu", rgb=[(201/255),(170/255),(28/255)]); toggleExit.bind(on_release=self.scrExit); displist.append(toggleExit)
         highDisp =     largeSideLabel(str(self.team.highgoal), rgb=[(28/255),(201/255),(40/255)]); displist.append(highDisp)
 
             #line 4
-        decLow1 =      smallSideButton("-1", rgb=[(14/255),(201/255),(170/255)]); decLow1.bind(on_release=lambda x: self.addLow(-1, lowDisp)); displist.append(decLow1)
-        decLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); decLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(decLow3)
+        climbStartBtn =largeSideButton("Started climbing", rgb=[(14/255),(201/255),(170/255)]); climbStartBtn.bind(on_release=lambda x: self.climbed(self.timeDisp, mode="Start")); displist.append(climbStartBtn)
+        #decLow3 =      smallSideButton("-3", rgb=[(14/255),(201/255),(170/255)]); decLow3.bind(on_release=lambda x: self.addLow(-3, lowDisp)); displist.append(decLow3)
         FoulLbl =      smallLabel("Fouls", rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulLbl)
         FoulDisp =     smallLabel(str(self.team.Foul), rgb=[(28/255),(129/255),(201/255)]); displist.append(FoulDisp)
         TFoulLbl =     smallLabel("TFouls", rgb=[(28/255),0,(201/255)]); displist.append(TFoulLbl)#AtpGears is the varible for Miss Gears
         TFoulDisp =    smallLabel(str(self.team.TFoul), rgb=[(28/255),0,(201/255)]); displist.append(TFoulDisp)
-        #dummyLbl124=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl124)
-        #dummyLbl126=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl126)
         toggleAuton =  smallButton("Auton", rgb=[(201/255),(170/255),(28/255)]); toggleAuton.bind(on_release=self.scrAuton); displist.append(toggleAuton)
         toggleCapab =  smallButton("Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
         decHigh =      largeSideButton("-1", rgb=[(28/255),(201/255),(40/255)]); decHigh.bind(on_release=lambda x: self.addHigh(-1, highDisp)); displist.append(decHigh)
 
             #line 5
-        decLow9 =     smallSideButton("-9", rgb=[(14/255),(201/255),(170/255)]); decLow9.bind(on_release=lambda x: self.addLow(-9, lowDisp)); displist.append(decLow9)
-        decLow15 =    smallSideButton("-15", rgb=[(14/255),(201/255),(170/255)]); decLow15.bind(on_release=lambda x: self.addLow(-15, lowDisp)); displist.append(decLow15)
+        climbStopBtn =largeSideButton("Finished climbing", rgb=[(14/255),(201/255),(170/255)]); climbStopBtn.bind(on_release=lambda x: self.climbed(self.timeDisp, mode="Stop")); displist.append(climbStopBtn)
+        #decLow15 =    smallSideButton("-15", rgb=[(14/255),(201/255),(170/255)]); decLow15.bind(on_release=lambda x: self.addLow(-15, lowDisp)); displist.append(decLow15)
         addFoul =     smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addFoul.bind(on_release=lambda x: self.Foul(1, FoulDisp)); displist.append(addFoul)
         decFoul =     smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decFoul.bind(on_release=lambda x: self.Foul(-1, FoulDisp)); displist.append(decFoul)
         addTFoul =    smallButton("+", rgb=[(28/255),0,(201/255)]); addTFoul.bind(on_release=lambda x: self.TFoul(1, TFoulDisp)); displist.append(addTFoul)
         decTFoul =    smallButton("-", rgb=[(28/255),0,(201/255)]); decTFoul.bind(on_release=lambda x: self.TFoul(-1, TFoulDisp)); displist.append(decTFoul)
-        #dummyLbl125=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl125)
-        #dummyLbl127=   largeLabel("", rgb=[0, 0, 0, 1]); displist.append(dummyLbl127)
-        togglenotes =  largeButton("Notes", rgb=[(201/255),(170/255),(28/255)]); togglenotes.bind(on_release=self.scrnotes); displist.append(togglenotes)
-        addHigh1 =     largeSideButton("-3", rgb=[(28/255),(201/255),(40/255)]); addHigh1.bind(on_release=lambda x: self.addHigh(-3, highDisp)); displist.append(addHigh1)
+        togglenotes = largeButton("Notes", rgb=[(201/255),(170/255),(28/255)]); togglenotes.bind(on_release=self.scrnotes); displist.append(togglenotes)
+        addHigh1 =    largeSideButton("-3", rgb=[(28/255),(201/255),(40/255)]); addHigh1.bind(on_release=lambda x: self.addHigh(-3, highDisp)); displist.append(addHigh1)
 
             #line 6
-        incLow1 =      smallSideButton("1", rgb=[(14/255),(201/255),(170/255)]); incLow1.bind(on_release=lambda x: self.addLow(1, lowDisp)); displist.append(incLow1)
-        incLow3 =      smallSideButton("3", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(3, lowDisp)); displist.append(incLow3)
-        capLbl =       largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
-        gearLbl =      smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
-        gearDisp =     smallLabel(str(self.team.gears), rgb=[(28/255),(129/255),(201/255)]); displist.append(gearDisp)
-        atpGearLbl =   smallLabel("AtpGears", rgb=[(28/255),0,(201/255)]); displist.append(atpGearLbl)#AtpGears is the varible for Miss Gears
-        atpGearDisp =  smallLabel(str(self.team.AtpGears), rgb=[(28/255),0,(201/255)]); displist.append(atpGearDisp)
-        addHigh2 =     largeSideButton("+1", rgb=[(28/255),(201/255),(40/255)]); addHigh2.bind(on_release=lambda x: self.addHigh(1, highDisp)); displist.append(addHigh2)
+        noClimbBtn =  largeSideButton("Reset", rgb=[(14/255),(201/255),(170/255)]); noClimbBtn.bind(on_release=lambda x: self.climbed(self.timeDisp, mode="None")); displist.append(noClimbBtn)
+        #incLow3 =     smallSideButton("3", rgb=[(14/255),(201/255),(170/255)]); incLow3.bind(on_release=lambda x: self.addLow(3, lowDisp)); displist.append(incLow3)
+        capLbl =      largeLabel("Capacity", rgb=[(14/255),(201/255),(170/255)]); displist.append(capLbl)
+        gearLbl =     smallLabel("Gears", rgb=[(28/255),(129/255),(201/255)]); displist.append(gearLbl)
+        gearDisp =    smallLabel(str(self.team.gears), rgb=[(28/255),(129/255),(201/255)]); displist.append(gearDisp)
+        atpGearLbl =  smallLabel("AtpGears", rgb=[(28/255),0,(201/255)]); displist.append(atpGearLbl)#AtpGears is the varible for Miss Gears
+        atpGearDisp = smallLabel(str(self.team.AtpGears), rgb=[(28/255),0,(201/255)]); displist.append(atpGearDisp)
+        addHigh2 =    largeSideButton("+1", rgb=[(28/255),(201/255),(40/255)]); addHigh2.bind(on_release=lambda x: self.addHigh(1, highDisp)); displist.append(addHigh2)
 
             #line 7
-        incLow9 =     smallSideButton("9", rgb=[(14/255),(201/255),(170/255)]); incLow9.bind(on_release=lambda x: self.addLow(9, lowDisp)); displist.append(incLow9)
-        incLow15 =     smallSideButton("15", rgb=[(14/255),(201/255),(170/255)]); incLow15.bind(on_release=lambda x: self.addLow(15, lowDisp)); displist.append(incLow15)
-        capDispAdd =   smallButton("+" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispAdd.bind(on_release=lambda x: self.addLow(self.team.capacity, lowDisp)); displist.append(capDispAdd)
-        capDispSub =   smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
-        addGear =      smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addGear.bind(on_release=lambda x: self.addGear(1, gearDisp)); displist.append(addGear)
-        decGear =      smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decGear.bind(on_release=lambda x: self.addGear(-1, gearDisp)); displist.append(decGear)
-        addatpGear =   smallButton("+", rgb=[(28/255),0,(201/255)]); addatpGear.bind(on_release=lambda x: self.addatpGear(1, atpGearDisp)); displist.append(addatpGear)
-        decatpGear =   smallButton("-", rgb=[(28/255),0,(201/255)]); decatpGear.bind(on_release=lambda x: self.addatpGear(-1, atpGearDisp)); displist.append(decatpGear)
-        addHigh3 =     largeSideButton("+3", rgb=[(28/255),(201/255),(40/255)]); addHigh3.bind(on_release=lambda x: self.addHigh(3, highDisp)); displist.append(addHigh3)
+        spaceLbl4 =     largeSideLabel("Note: ", rgb=[(14/255),(201/255),(170/255)]); displist.append(spaceLbl4)
+        #spaceLbl5 =    smallSideLabel("", rgb=[(14/255),(201/255),(170/255)]); displist.append(spaceLbl5)
+        capDispAdd =  smallButton("+" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispAdd.bind(on_release=lambda x: self.addLow(self.team.capacity, lowDisp)); displist.append(capDispAdd)
+        capDispSub =  smallButton("-" + str(self.team.capacity), rgb=[(14/255),(201/255),(170/255)]); capDispSub.bind(on_release=lambda x: self.addLow(-self.team.capacity, lowDisp)); displist.append(capDispSub)
+        addGear =     smallButton("+", rgb=[(28/255),(129/255),(201/255)]); addGear.bind(on_release=lambda x: self.addGear(1, gearDisp)); displist.append(addGear)
+        decGear =     smallButton("-", rgb=[(28/255),(129/255),(201/255)]); decGear.bind(on_release=lambda x: self.addGear(-1, gearDisp)); displist.append(decGear)
+        addatpGear =  smallButton("+", rgb=[(28/255),0,(201/255)]); addatpGear.bind(on_release=lambda x: self.addatpGear(1, atpGearDisp)); displist.append(addatpGear)
+        decatpGear =  smallButton("-", rgb=[(28/255),0,(201/255)]); decatpGear.bind(on_release=lambda x: self.addatpGear(-1, atpGearDisp)); displist.append(decatpGear)
+        addHigh3 =    largeSideButton("+3", rgb=[(28/255),(201/255),(40/255)]); addHigh3.bind(on_release=lambda x: self.addHigh(3, highDisp)); displist.append(addHigh3)
 
         self.clear_widgets()
         for widg in displist:

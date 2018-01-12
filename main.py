@@ -24,7 +24,7 @@ import os
 import random
 import string
 
-CURRENT_EVENT = "Worlds"
+CURRENT_EVENT = "WMRI"
 
 piip = "10.111.49.62"
 
@@ -67,58 +67,6 @@ Builder.load_string("""
             source: "/colors/background.jpg"
             pos: self.x - 1, self.y - 1
             size: self.width + 2, self.height + 2
-
-#:kivy 1.0.9
-
-<PongBall>:
-    size: 50, 50
-    canvas:
-        Ellipse:
-            pos: self.pos
-            size: self.size
-
-<PongPaddle>:
-    size: 64, 200
-    canvas:
-        Rectangle:
-            pos:self.pos
-            size:self.size
-
-<PongGame>:
-    ball: pong_ball
-    player1: player_left
-    player2: player_right
-
-    canvas:
-        Rectangle:
-            pos: self.center_x-5, 0
-            size: 10, self.height
-
-    Label:
-        font_size: 70
-        center_x: root.width / 4
-        top: root.top - 50
-        text: str(root.player1.score)
-
-    Label:
-        font_size: 70
-        center_x: root.width * 3 / 4
-        top: root.top - 50
-        text: str(root.player2.score)
-
-    PongBall:
-        id: pong_ball
-        center: self.parent.center
-
-    PongPaddle:
-        id: player_left
-        x: root.x
-        center_y: root.center_y
-
-    PongPaddle:
-        id: player_right
-        x: root.width-self.width
-        center_y: root.center_y
 """)
 
 #Overwriting normal widget classes to make them pretty
@@ -179,13 +127,13 @@ def xlargeButton(txt, rgb=[.5,.5,.5], height=.08333333333):         # climbed bu
 
 #all buttons and labels in the auton screen
 def autonLabel(txt, rgb=[.5,.5,.5]):
-    return cLabel(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
+    return cLabel(text=str(txt), rgb=rgb, size_hint=((1/2), (1/6)))
 def autonButton(txt, rgb=[.5,.5,.5]):
-    return cButton(text=str(txt), rgb=rgb, size_hint=((1/3), (1/6)))
+    return cButton(text=str(txt), rgb=rgb, size_hint=((1/2), (1/6)))
 def smallautonButton(txt, rgb=[.5,.5,.5]):
-    return cButton(text=str(txt), rgb=rgb, size_hint=((1/6), (1/6)))
+    return cButton(text=str(txt), rgb=rgb, size_hint=((1/4), (1/6)))
 def smallautonLabel(txt, rgb=[.5,.5,.5]):
-    return cLabel(text=str(txt), rgb=rgb, size_hint=((1/6), (1/6)))
+    return cLabel(text=str(txt), rgb=rgb, size_hint=((1/4), (1/6)))
 
 class Team:
     def __init__(self, number):
@@ -269,73 +217,6 @@ class Team:
             debug('ok')
         debug("putCData() end", "header")
 
-class PongPaddle(Widget):
-    score = NumericProperty(0)
-
-    def bounce_ball(self, ball):
-        if self.collide_widget(ball):
-            vx, vy = ball.velocity
-            offset = (ball.center_y - self.center_y) / (self.height / 2)
-            bounced = Vector(-1 * vx, vy)
-            vel = bounced * 1.25
-            if vel.length() >= 80:
-                vel = bounced * 1
-            ball.velocity = vel.x, vel.y + offset
-            print (vel.length())
-
-class PongBall(Widget):
-    velocity_x = NumericProperty(0)
-    velocity_y = NumericProperty(0)
-    velocity = ReferenceListProperty(velocity_x, velocity_y)
-
-    def move(self):
-        self.pos = Vector(*self.velocity) + self.pos
-
-class PongGame(Widget):
-    ball = ObjectProperty(None)
-    player1 = ObjectProperty(None)
-    player2 = ObjectProperty(None)
-
-    parentscreen = None
-
-    def serve_ball(self, vel=(4, 0)):
-        self.ball.center = self.center
-        self.ball.velocity = vel
-
-    def update(self, dt):
-        self.ball.move()
-
-        # bounce of paddles
-        self.player1.bounce_ball(self.ball)
-        self.player2.bounce_ball(self.ball)
-
-        # bounce ball off bottom or top
-        if (self.ball.y < self.y) or (self.ball.top > self.top):
-            self.ball.velocity_y *= -1
-
-        # went of to a side to score point?
-        if self.ball.x < self.x:
-            self.player2.score += 1
-            self.serve_ball(vel=(4, 0))
-        if self.ball.x > self.width:
-            self.player1.score += 1
-            self.serve_ball(vel=(-4, 0))
-        if self.player1.score == 4:
-            self.parentscreen.win = "P1 Wins"
-            self.player1.score = 0
-            self.parentscreen.scrMain()
-        if self.player2.score == 4:
-            self.parentscreen.win = "P2 Wins"
-            self.player2.score = 0
-            self.parentscreen.scrMain()
-
-    def on_touch_move(self, touch):
-        if touch.x < self.width / 3:
-            self.player1.center_y = touch.y
-        if touch.x > self.width - self.width / 3:
-            self.player2.center_y = touch.y
-
-game = PongGame()
 
 #main class, overwrites stacklayout layout from kivy
 class Screen(StackLayout):
@@ -916,30 +797,23 @@ class Screen(StackLayout):
 
 
         #row 1
-        lowLbl =  autonLabel(txt="Low", rgb=[(14/255),(201/255),(170/255)]); displist.append(lowLbl)
         teamLbl = smallautonLabel(txt="Team " + str(self.team.number), rgb=[0, 0, 0, 1]); displist.append(teamLbl)
         roundLbl = smallautonLabel(txt='Round ' + str(self.team.round), rgb=[0, 0, 0, 1]); displist.append(roundLbl)
-        highLbl = autonLabel(txt="High", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl)
+        highLbl = autonLabel(txt="kPa", rgb=[(28/255),(201/255),(40/255)]); displist.append(highLbl)
         #row 2
-        lowDisp =  autonLabel(txt=self.team.aLowgoal, rgb=[(14/255),(201/255),(170/255)]); displist.append(lowDisp)
         autonLbl = autonLabel(txt="Auton", rgb=[0, 0, 0, 1]); displist.append(autonLbl)
         highDisp = autonLabel(txt=self.team.aHighgoal, rgb=[(28/255),(201/255),(40/255)]); displist.append(highDisp)
         #row 3
-        low1 =       autonButton(txt="+1", rgb=[(14/255),(201/255),(170/255)]); low1.bind(on_release=lambda x: self.aAddLow(1, lowDisp)); displist.append(low1)
         toggleTele = smallautonButton(txt="Teleop", rgb=[(201/255),(170/255),(28/255)]); toggleTele.bind(on_release=self.scrMain); displist.append(toggleTele)
         toggleCapab = smallautonButton(txt="Capability", rgb=[(201/255),(170/255),(28/255)]); toggleCapab.bind(on_release=self.scrCapab); displist.append(toggleCapab)
         high1 =      autonButton(txt="+1", rgb=[(28/255),(201/255),(40/255)]); high1.bind(on_release=lambda x: self.aAddHigh(1, highDisp)); displist.append(high1)
         #row 4
-        low5 =        autonButton(txt="+5", rgb=[(14/255),(201/255),(170/255)]); low5.bind(on_release=lambda x: self.aAddLow(5, lowDisp)); displist.append(low5)
-        #self.timeLbl = autonButton(txt="", rgb=[0, 0, 0]);displist.append(self.timeLbl)
         checkwg =  autonButton(self.team.w, self.team.wcolor); checkwg.bind(on_release=lambda x: self.checkwg(checkwg)); displist.append(checkwg)
         high3 =       autonButton(txt="+3", rgb=[(28/255),(201/255),(40/255)]); high3.bind(on_release=lambda x: self.aAddHigh(3, highDisp)); displist.append(high3)
         #row 5
-        lowm1 =   autonButton(txt="-1", rgb=[(14/255),(201/255),(170/255)]); lowm1.bind(on_release=lambda x: self.aAddLow(-1, lowDisp)); displist.append(lowm1)
         checkg =  autonButton(self.team.g, self.team.gcolor); displist.append(checkg)
         highm1 =  autonButton(txt="-1", rgb=[(28/255),(201/255),(40/255)]); highm1.bind(on_release=lambda x: self.aAddHigh(-1, highDisp)); displist.append(highm1)
         #row 6
-        lowm5 =  autonButton(txt="-5", rgb=[(14/255),(201/255),(170/255)]); lowm5.bind(on_release=lambda x: self.aAddLow(-5, lowDisp)); displist.append(lowm5)
         xedBtn = autonButton(txt="The team %s cross the ready line."%("DID"if self.team.aCrossed else"DIDN'T"),rgb=[(28/255),(129/255),(201/255)]);xedBtn.bind(on_release=self.aToggleCross);displist.append(xedBtn)
         highm3 = autonButton(txt="-3", rgb=[(28/255),(201/255),(40/255)]); highm3.bind(on_release=lambda x: self.aAddHigh(-3, highDisp)); displist.append(highm3)
         checkg.bind(on_release=lambda x: self.linkCrossAGear(checkg, xedBtn))

@@ -1,0 +1,6 @@
+round,pos 1 red,1R Score,pos 2 red,2R Score,pos 3 red,3R Score,pos 1 blue,1B Score,pos 2 blue,2B Score,pos 3 blue,3B Score,red score,blue score
+1,21,41,58,23,88,42,25,45,5,21,99,41,106,107
+2,error,41,error,23,6324,42,88,45,1153,21,error,41,106,107
+77,error,41,error,23,error,42,error,45,24,21,error,41,106,107
+38,error,41,error,23,74,42,error,45,error,21,error,41,106,107
+23,error,41,error,23,error,42,error,45,74,21,error,41,106,107

@@ -32,11 +32,11 @@ version = 0.1
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
-# version.filename = %(source.dir)s/main.py
+#version.filename = %(source.dir)s/main.py
 
 # (list) Application requirements
 # comma seperated e.g. requirements = kivy
-requirements = sqlite3,kivy,hostpython3,python3crystax
+requirements = sqlite3, kivy, python3crystax, mysql-connector-python, plyer, android
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -72,7 +72,7 @@ orientation = landscape
 fullscreen = 1
 
 # (list) Permissions
-#android.permissions = INTERNET
+android.permissions = INTERNET, CAMERA
 
 # (int) Android API to use
 android.api = 19
@@ -84,19 +84,19 @@ android.minapi = 19
 #android.sdk =
 
 # (str) Android NDK version to use
-#android.ndk = 9c
+android.ndk = 10.3.2
 
 # (bool) Use --private data storage (True) or --dir public storage (False)
 #android.private_storage = True
 
 # (str) Android NDK directory (if empty, it will be automatically downloaded.)
-android.ndk_path = /home/cbest/Downloads/crystax-ndk-10.3.2
+android.ndk_path = /usr/lib/crystax-ndk-10.3.2
 
 # (str) Android SDK directory (if empty, it will be automatically downloaded.)
-#android.sdk_path =
+android.sdk_path = /usr/lib/android-sdk-linux
 
 # (str) ANT directory (if empty, it will be automatically downloaded.)
-#android.ant_path =
+android.ant_path = /usr/lib/apache-ant-1.9.4
 
 # (str) python-for-android git clone directory (if empty, it will be automatically cloned from github)
 #android.p4a_dir =
@@ -183,7 +183,7 @@ log_level = 2
 warn_on_root = 1
 
 # (str) Path to build artifact storage, absolute or relative to spec file
-# build_dir = ./.buildozer
+# build_dir = ./buildapp
 
 # (str) Path to build output (i.e. .apk, .ipa) storage
 # bin_dir = ./bin
